@@ -32,16 +32,16 @@ namespace FifthBot
         private async Task MainAsync()
         {
             string JSON = "";
-            string SettingsLocation = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location).Replace(@"bin\Debug\netcoreapp2.2",
-                @"\Data\Settings.json");
+            //string SettingsLocation = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location).Replace(@"bin\Debug\netcoreapp2.2", @"\Data\Settings.json");
 
-            /*
-            if (!File.Exists(SettingsLocation))
+            string settingsLocation = @"C:\discordbots\FifthBot\FifthBot\Data\Settings.json";
+
+            if (!File.Exists(settingsLocation))
             {
-
+                settingsLocation = @"/home/ubuntu/FifthBot/Data/Settings.json";
             }
-            */
-            using (var fileStream = new FileStream(SettingsLocation, FileMode.Open, FileAccess.Read))
+            
+            using (var fileStream = new FileStream(settingsLocation, FileMode.Open, FileAccess.Read))
             using (var ReadSettings = new StreamReader(fileStream))
             {
                 JSON = ReadSettings.ReadToEnd();
@@ -49,8 +49,7 @@ namespace FifthBot
 
             Setting Settings = JsonConvert.DeserializeObject<Setting>(JSON);
 
-            String token = Settings.token;
-
+            
 
 
 
@@ -82,27 +81,10 @@ namespace FifthBot
 
             Client.ReactionAdded += Client_ReactionAdded;
 
-            /*
-            string Token = "";
-            using (var Stream = new FileStream((Path.GetDirectoryName(Assembly.GetEntryAssembly().Location)).Replace(@"bin\Debug\netcoreapp2.1", @"Data\Token.txt"), FileMode.Open, FileAccess.Read))
-            using (var ReadToken = new StreamReader(Stream))
-            {
-                Token = ReadToken.ReadToEnd();
-            }
-            */
 
-
-
+    
             await Client.LoginAsync(TokenType.Bot, Settings.token);
             await Client.StartAsync();
-
-
-
-
-
-
-
-
 
 
 

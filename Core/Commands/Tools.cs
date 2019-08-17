@@ -23,6 +23,8 @@ namespace FifthBot.Core.Commands
         [RequireOwner(Group = "Permission")]
         [RequireRole(name: "Seven Deadly Sins", Group = "Permission")]
         [RequireRole(name: "Testers", Group = "Permission")]
+        [RequireRole(name: "Sinners", Group = "Permission")]
+        [RequireChannel(name: "search")]
         [Command("search"), Alias("searchtags"), Summary("Search all of a user's tags!")]
         public async Task Search(params string[] text)
         {
@@ -586,6 +588,11 @@ namespace FifthBot.Core.Commands
 
 
         }
+
+
+
+
+
 
 
     }

@@ -235,6 +235,7 @@ namespace FifthBot.Core.Data
 
         public static async Task AddKink(string kinkName, string kinkDesc)
         {
+            Console.WriteLine("we're getting to addkink");
             using (var DbContext = new SqliteDbContext())
             {
                 if (!DbContext.Kinks.Any(x => x.KinkName == kinkName))
@@ -249,7 +250,7 @@ namespace FifthBot.Core.Data
 
 
 
-
+                Console.WriteLine("we're getting to save changes async");
                 await DbContext.SaveChangesAsync();
             }
 

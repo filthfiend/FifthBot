@@ -9,8 +9,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FifthBot.Migrations
 {
     [DbContext(typeof(SqliteDbContext))]
-    [Migration("20190813204101_kinkgroupchannels")]
-    partial class kinkgroupchannels
+    [Migration("20190815214046_onceagain")]
+    partial class onceagain
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -97,10 +97,6 @@ namespace FifthBot.Migrations
                     b.Property<ulong>("KinkID")
                         .ValueGeneratedOnAdd();
 
-                    b.Property<ulong>("EmojiID");
-
-                    b.Property<string>("EmojiName");
-
                     b.Property<string>("KinkDesc");
 
                     b.Property<ulong>("KinkGroupID");
@@ -112,16 +108,44 @@ namespace FifthBot.Migrations
                     b.ToTable("Kinks");
                 });
 
+            modelBuilder.Entity("FifthBot.Resources.Database.KinkEmoji", b =>
+                {
+                    b.Property<ulong>("JoinID")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<string>("EmojiName");
+
+                    b.Property<ulong>("KinkID");
+
+                    b.Property<ulong>("ServerID");
+
+                    b.HasKey("JoinID");
+
+                    b.ToTable("KinkEmojis");
+                });
+
             modelBuilder.Entity("FifthBot.Resources.Database.KinkGroup", b =>
                 {
                     b.Property<ulong>("KinkGroupID")
                         .ValueGeneratedOnAdd();
 
-                    b.Property<ulong>("KinkChannelID");
-
                     b.Property<string>("KinkGroupDescrip");
 
                     b.Property<string>("KinkGroupName");
+
+                    b.HasKey("KinkGroupID");
+
+                    b.ToTable("KinkGroups");
+                });
+
+            modelBuilder.Entity("FifthBot.Resources.Database.KinkGroupMenu", b =>
+                {
+                    b.Property<ulong>("JoinID")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<ulong>("KinkChannelID");
+
+                    b.Property<ulong>("KinkGroupID");
 
                     b.Property<ulong>("KinkMsgID");
 
@@ -129,9 +153,11 @@ namespace FifthBot.Migrations
 
                     b.Property<ulong>("LimitMsgID");
 
-                    b.HasKey("KinkGroupID");
+                    b.Property<ulong>("ServerID");
 
-                    b.ToTable("KinkGroups");
+                    b.HasKey("JoinID");
+
+                    b.ToTable("KinkGroupMenus");
                 });
 
             modelBuilder.Entity("FifthBot.Resources.Database.ServerSetting", b =>
