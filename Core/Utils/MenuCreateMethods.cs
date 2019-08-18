@@ -32,6 +32,8 @@ namespace FifthBot.Core.Utils
 
             var editMenuMsg = (RestUserMessage)await Context.Channel.GetMessageAsync(Vars.menuBuilder.EditMenuID);
 
+            
+
 
             if (Vars.menuBuilder.CommandStep == 0)
             {
@@ -55,6 +57,8 @@ namespace FifthBot.Core.Utils
                 Vars.menuBuilder.KinkGroupID = groupToMenufy.KinkGroupID;
                 Vars.menuBuilder.KinksToUpdate = DataMethods.GetKinksInGroupWithEmojis(groupToMenufy.KinkGroupID, Vars.menuBuilder.ServerID);
 
+                Console.WriteLine("We're passing GetKinksInGroupWithEmojis.");
+
 
 
                 if (Vars.menuBuilder.KinksToUpdate == null)
@@ -68,12 +72,15 @@ namespace FifthBot.Core.Utils
 
                 }
 
-                string fartz = "";
-                foreach (KinkWithEmoji shitz in Vars.menuBuilder.KinksToUpdate)
+                Console.WriteLine("We're passing kinkstoupdate null check.");
+
+                //CONSOLE DATA CHECK
+                Console.WriteLine("Writing kinks to update\n");
+                foreach (var kink in Vars.menuBuilder.KinksToUpdate)
                 {
-                    fartz += "Kink Data - KinkID: " + shitz.KinkID + ", ServerID: " + shitz.ServerID + ", Emoji Name: " + shitz.EmojiName + "\n";
+                   Console.WriteLine("name - " + kink.KinkName + ", group - " + kink.KinkGroupID + "\n");
                 }
-                Console.WriteLine(fartz);
+                Console.WriteLine("Done");
 
                 string emojiMenuText = "​\n" + "Building Menu" + "\n​" + "\n​"
                     + "Group - " + Vars.menuBuilder.KinkGroupName + "\n​";
@@ -135,6 +142,7 @@ namespace FifthBot.Core.Utils
             }
             else if (Vars.menuBuilder.CommandStep == 2)
             {
+                Vars.menuBuilder.CommandStep = 3;
                 string limitOrKink = Vars.menuBuilder.IsLimitMenu ? "Limit" : "Kink";
                 string reuseOrScratch = Context.Message.Content;
                 reuseOrScratch.ToLower();
@@ -151,60 +159,278 @@ namespace FifthBot.Core.Utils
                     return;
                 }
 
-                if (reuseOrScratch == "scratch")
+                if (reuseOrScratch == "Scratch")
                 {
-                    /*
-                    foreach(Kink kink in Vars.menuBuilder.KinksToUpdate)
+                    
+                    foreach(KinkWithEmoji kinkWE in Vars.menuBuilder.KinksToUpdate)
                     {
-                        kink.EmojiID = 0;
-                        kink.EmojiName = "";
+                        kinkWE.ServerID = 0;
+                        kinkWE.EmojiName = "";
                     }
-                    */
+                    
                 }
 
-                Vars.menuBuilder.CommandStep++;
-
                 string emojiMenuText = "​\n" + "Building Menu" + "\n​" + "\n​"
-                    + limitOrKink + " Group - " + Vars.menuBuilder.KinkGroupName + "\n​";
+                    + limitOrKink + " Group - " + Vars.menuBuilder.KinkGroupName + "\n" + "\n​";
                 await emojiMenuMsg.ModifyAsync(x => x.Content = emojiMenuText);
-
 
                 string editMenuText = "​\n" + "Edit Menu" + "\n​" + "\n​"
                     + "Valid Entry!" + "\n​";
 
+                var setKinks = Vars.menuBuilder.KinksToUpdate.Where(x => x.EmojiName != "").ToList();
+
+                foreach(var kinkWE in setKinks)
+                {
+                    IEmote myEmote = null;
+                    if (Emote.TryParse(kinkWE.EmojiName, out Emote shitfartz))
+                    {
+                        myEmote = shitfartz;
+                    }
+                    else
+                    {
+                        myEmote = new Emoji(kinkWE.EmojiName);
+                    }
+                        
+                        //= Emote.TryParse(kinkWE.EmojiName, out Emote shitfartz) ? shitfartz : new Emoji(kinkWE.EmojiName);
+
+                    /*
+                    var anEmoji = Context.Guild.Emotes.Where(x => x.Name == kinkWE.EmojiName).FirstOrDefault();
+
+                    string anEmojiString = anEmoji.ToString();
+                    */
+                    emojiMenuText += myEmote + " " + kinkWE.KinkName + " - " + kinkWE.KinkDesc + "\n" + "\n​";
+                    
+                    await Task.Delay(1000);
+                    await emojiMenuMsg.ModifyAsync(x => x.Content = emojiMenuText);
+                    await emojiMenuMsg.AddReactionAsync(myEmote);
+                }
+
+                //Guild.Emotes.Where(x => x.Name == kinkToUpdate.EmojiName).FirstOrDefault();
+
+
                 await editMenuMsg.ModifyAsync(x => x.Content = editMenuText);
 
-                /*
-                string firstKinkName = Vars.menuBuilder.KinksToUpdate.Where(x => x.EmojiID == 0).FirstOrDefault().KinkName;
+                //remember if you do reuse that this may not work cause it
+                // could be full
+
+                if (!Vars.menuBuilder.KinksToUpdate.Any(x => x.EmojiName.Equals("")))
+                {
+                    editMenuText += "​\n" + "You are all out of kinks to enter! Writing Menu to Database!" + "\n​";
+                    await DataMethods.AddKinkMenu();
+
+                    await Task.Delay(2000);
+
+                    await editMenuMsg.ModifyAsync(x => x.Content = editMenuText);
+
+                    WipeMenuBuilder();
+
+                    return;
+
+                }
+
+                string firstKinkName = Vars.menuBuilder.KinksToUpdate.Where(x => x.EmojiName.Equals("")).FirstOrDefault().KinkName;
+                editMenuText += "​\n" + "Please react to THIS post with the emoji for: " + firstKinkName + "\n​";
 
                 await Task.Delay(2000);
 
-                editMenuText += "​\n" + "Please react to THIS post with the emoji for: " + firstKinkName + "\n​";
                 await editMenuMsg.ModifyAsync(x => x.Content = editMenuText);
-                */
 
 
-                WipeMenuBuilder();
+            }
+
+
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        public async Task GroupMenuEmojiAdder(SocketReaction reaction)
+        {
+            Console.WriteLine("Launched GroupMenuEmojiAdder");
+
+            string limitOrKink = Vars.menuBuilder.IsLimitMenu ? "Limit" : "Kink";
+
+            var emojiMenuMsg = (RestUserMessage)await reaction.Channel.GetMessageAsync(Vars.menuBuilder.EmojiMenuID);
+
+            var editMenuMsg = (RestUserMessage)await reaction.Channel.GetMessageAsync(Vars.menuBuilder.EditMenuID);
+
+            Console.WriteLine("Getting kink to update");
+
+            var kinkToUpdate = Vars.menuBuilder.KinksToUpdate.Where(x => x.EmojiName.Equals("")).FirstOrDefault();
+
+            Console.WriteLine("Adding data to kink");
+
+            kinkToUpdate.EmojiName = reaction.Emote.ToString();
+            kinkToUpdate.ServerID = Vars.menuBuilder.ServerID;
+
+            Console.WriteLine("Stored emote name - " + kinkToUpdate.EmojiName);
+            Console.WriteLine("Emote - No name dropped into string - " + reaction.Emote);
+
+            Console.WriteLine("Parsing same way for both types:");
+            Console.WriteLine("Setting emojiMenuString to message content");
+
+            string emojiMenuString = emojiMenuMsg.Content;
+
+            Console.WriteLine("Adding emoji and kink to emoji menu string");
+
+            emojiMenuString += reaction.Emote + " " + kinkToUpdate.KinkName + " - " + kinkToUpdate.KinkDesc + "\n" + "\n​";
+
+            Console.WriteLine("Updating menu message");
+
+            await emojiMenuMsg.ModifyAsync(x => x.Content = emojiMenuString);
+
+            Console.WriteLine("Addding emoji");
+
+            await emojiMenuMsg.AddReactionAsync(reaction.Emote);
+
+
+
+            /*
+            Console.WriteLine("Hopefully getting the goddamn guild channel");
+
+            var aGuildChannel = reaction.Channel as SocketGuildChannel;
+
+            Console.WriteLine("Hopefully getting the goddamn emote");
+
+            Emote anEmoji = aGuildChannel.Guild.Emotes.Where(x => x.Name == kinkToUpdate.EmojiName).FirstOrDefault();
+
+            
+            if (anEmoji != null)
+            {
+                Console.WriteLine("Parsing first way");
+
+                Console.WriteLine("Setting emoji to string");
+
+                string anEmojiString = anEmoji.ToString();
+
+                Console.WriteLine("Setting emojiMenuString to message content");
+
+                string emojiMenuString = emojiMenuMsg.Content;
+
+                Console.WriteLine("Adding emoji and kink to emoji menu string");
+
+                emojiMenuString += anEmojiString + " " + kinkToUpdate.KinkName + " - " + kinkToUpdate.KinkDesc + "\n" + "\n​";
+
+                Console.WriteLine("Updating menu message");
+
+                await emojiMenuMsg.ModifyAsync(x => x.Content = emojiMenuString);
+
+                Console.WriteLine("Addding emoji");
+
+                await emojiMenuMsg.AddReactionAsync(anEmoji);
+
+            }
+            else
+            {
+                Console.WriteLine("Parsing second way");
+
+                Console.WriteLine("Setting emojiMenuString to message content");
+
+                string emojiMenuString = emojiMenuMsg.Content;
+
+                Console.WriteLine("Adding emoji and kink to emoji menu string");
+
+                emojiMenuString += reaction.Emote + " " + kinkToUpdate.KinkName + " - " + kinkToUpdate.KinkDesc + "\n" + "\n​";
+
+                Console.WriteLine("Updating menu message");
+
+                await emojiMenuMsg.ModifyAsync(x => x.Content = emojiMenuString);
+
+
+                Console.WriteLine("Addding emoji");
+
+                await emojiMenuMsg.AddReactionAsync(reaction.Emote);
+
+
+            }
+
+            */
+
+
+
+            /*
+            bool parseWorks = false;
+            if (anEmoji == null)
+            {
+                parseWorks = Emote.TryParse(kinkToUpdate.EmojiName, out anEmoji);
+                Console.WriteLine("Parsing first way");
+            }
+            if (parseWorks == false)
+            {
+                parseWorks = Emote.TryParse(":" + kinkToUpdate.EmojiName + ":", out anEmoji);
+                Console.WriteLine("Parsing second way");
+            }
+            if (parseWorks == false)
+            {
+                Console.WriteLine("Fucked both ways lol");
+            }
+            */
+
+
+
+
+
+
+            string editMenuString = editMenuMsg.Content;
+
+            string please = "​\nPlease";
+
+            if (editMenuString.IndexOf(please) > -1)
+            {
+                editMenuString = editMenuString.Remove(editMenuString.IndexOf(please));
             }
 
 
 
+            var kinksNotupdated = Vars.menuBuilder.KinksToUpdate.Where(x => x.EmojiName.Equals(""));
+
+            if(kinksNotupdated.Count() > 0)
+            {
+                string firstKinkName = kinksNotupdated.FirstOrDefault().KinkName;
+
+                editMenuString += "​\n" + "Please react to THIS post with the emoji for: " + firstKinkName + "\n​";
+
+                await Task.Delay(2000);
+
+                await editMenuMsg.ModifyAsync(x => x.Content = editMenuString);
+
+            }
+            else
+            {
+                editMenuString += "​\n" + "Finally time to try and write everything to the database!" + "\n​";
+
+                // time to call some sort of write KinkEmojiData method
+
+                await DataMethods.AddKinkMenu();
+
+                await Task.Delay(2000);
+
+                await editMenuMsg.ModifyAsync(x => x.Content = editMenuString);
+
+                WipeMenuBuilder();
 
 
+            }
 
-
+            
 
         }
-
-        public async Task GroupMenuEmojiAdder(SocketReaction reaction)
-        {
-
-
-        }
-
-
-
-
 
 
         private void WipeMenuBuilder()
@@ -213,6 +439,7 @@ namespace FifthBot.Core.Utils
             Vars.menuBuilder.EmojiMenuID = 0;
             Vars.menuBuilder.EditMenuID = 0;
             Vars.menuBuilder.ChannelID = 0;
+            Vars.menuBuilder.ServerID = 0;
             Vars.menuBuilder.UserID = 0;
             Vars.menuBuilder.KinkGroupName = "";
             Vars.menuBuilder.CommandStep = 0;

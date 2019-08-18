@@ -12,6 +12,7 @@ namespace FifthBot.Resources.Database
         public ulong KinkID { get; set; }
         public ulong ServerID { get; set; }
         public string EmojiName { get; set; }
+        public ulong KinkGroupID { get; set; }
         
 
     }

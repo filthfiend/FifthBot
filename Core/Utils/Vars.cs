@@ -7,13 +7,15 @@ namespace FifthBot.Core.Utils
 {
     public class Vars
     {
-        public static List<ulong> usersAddingKinks = new List<ulong>();
+        //public static List<ulong> usersAddingKinks = new List<ulong>();
 
         public static List<Command> activeCommands = new List<Command>();
 
         public static List<ITableEntry> tableEntries = new List<ITableEntry>();
 
         public static MenuBuilder menuBuilder = new MenuBuilder();
+
+        public static List<KinkGroupMenu> groupMenus = new List<KinkGroupMenu>();
 
 
     }

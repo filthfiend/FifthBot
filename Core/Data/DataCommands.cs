@@ -8,6 +8,9 @@ using System.Linq;
 using FifthBot.Resources.Database;
 using FifthBot.Core.Utils;
 
+using Discord;
+using Discord.WebSocket;
+
 
 
 namespace FifthBot.Core.Data
@@ -351,46 +354,26 @@ namespace FifthBot.Core.Data
         {
             using (var DbContext = new SqliteDbContext())
             {
-                
-                if (
-                        DbContext.Kinks.GroupJoin
-                            (
-                                DbContext.KinkEmojis,
-                                Kink => Kink.KinkID,
-                                KinkEmoji => KinkEmoji.ServerID,
-                                (Kink, KinkEmoji) => new { Kink, KinkEmoji }
-
-
-                            )
-                        .SelectMany
-                            (
-                                Kink => Kink.KinkEmoji.DefaultIfEmpty(),
-                                (KinkHolder, KinkEmoji) => new KinkWithEmoji
-                                {
-                                    KinkID = KinkHolder.Kink.KinkID,
-                                    KinkName = KinkHolder.Kink.KinkName,
-                                    KinkDesc = KinkHolder.Kink.KinkDesc,
-                                    KinkGroupID = KinkHolder.Kink.KinkGroupID,
-                                    ServerID = KinkEmoji.ServerID,
-                                    EmojiName = KinkEmoji.EmojiName,
-                                }
-                            )
-                        .Where(x => x.ServerID == serverID && (x.KinkGroupID == groupID || x.KinkGroupID == 0))
-                        .Count() < 1
-                    )
-                {
-                    return null;
-                }
-
-                return DbContext.Kinks.GroupJoin
+                var myKinksList = DbContext.Kinks
+                .Where
                     (
-                        DbContext.KinkEmojis,
+                        x => x.KinkGroupID == groupID
+                    );
+
+                Console.WriteLine("we're getting the kinks from the group");
+
+                var myKinksAndEmojisAsGroupJoin = myKinksList
+                .GroupJoin
+                    (
+                        DbContext.KinkEmojis.Where(sp => sp.ServerID == serverID),
                         Kink => Kink.KinkID,
-                        KinkEmoji => KinkEmoji.ServerID,
+                        KinkEmoji => KinkEmoji.KinkID,
                         (Kink, KinkEmoji) => new { Kink, KinkEmoji }
+                    );
 
+                Console.WriteLine("we're doing the group join");
 
-                    )
+                var myKEsasFlatList = myKinksAndEmojisAsGroupJoin
                 .SelectMany
                     (
                         Kink => Kink.KinkEmoji.DefaultIfEmpty(),
@@ -400,33 +383,24 @@ namespace FifthBot.Core.Data
                             KinkName = KinkHolder.Kink.KinkName,
                             KinkDesc = KinkHolder.Kink.KinkDesc,
                             KinkGroupID = KinkHolder.Kink.KinkGroupID,
-                            ServerID = KinkEmoji.ServerID,
-                            EmojiName = KinkEmoji.EmojiName,
+                            ServerID = (KinkEmoji != null) ? KinkEmoji.ServerID : 0,
+                            EmojiName = (KinkEmoji != null) ? KinkEmoji.EmojiName : "",
                         }
-                    )
-                .Where(x => x.ServerID == serverID && (x.KinkGroupID == groupID || x.KinkGroupID == 0))
-                .ToList();
+                    );
+                ;
 
+                Console.WriteLine("we're past the group join, ready to return");
 
+                if (
+                        myKEsasFlatList.Count() < 1
+                   )
+                {
+                    return null;
+                }
 
-                 /*
-                 return DbContext.Kinks.Join
-                    (
-                        DbContext.KinkEmojis,
-                        Kink => Kink.KinkID,
-                        KinkEmoji => KinkEmoji.ServerID,
-                        (Kink, KinkEmoji) => new KinkWithEmoji
-                        {
-                            KinkID = Kink.KinkID,
-                            KinkName = Kink.KinkName,
-                            KinkDesc = Kink.KinkDesc,
-                            KinkGroupID = Kink.KinkGroupID,
-                            ServerID = KinkEmoji.ServerID,
-                            EmojiName = KinkEmoji.EmojiName,
-                        }
-                    )
-                   .Where(x => x.ServerID == serverID && x.KinkGroupID == groupID).ToList();
-                 */
+                Console.WriteLine("we're not returning null");
+
+                return myKEsasFlatList.ToList();
                     
              }
         }
@@ -517,6 +491,117 @@ namespace FifthBot.Core.Data
                 return true;
             }
         }
+
+        public static async Task AddKinkMenu()
+        {
+            using (var DbContext = new SqliteDbContext())
+            {
+                //need to update the following:
+                //group records - write kink or limit server/channel
+
+                KinkGroupMenu groupMenu = DbContext.KinkGroupMenus.Where(x => x.KinkGroupID == Vars.menuBuilder.KinkGroupID && x.ServerID == Vars.menuBuilder.ServerID).FirstOrDefault();
+
+                if (groupMenu == null && !Vars.menuBuilder.IsLimitMenu)
+                {
+                    //groupMenu = new
+
+                    DbContext.KinkGroupMenus.Add(new KinkGroupMenu
+                    {
+                        KinkGroupID = Vars.menuBuilder.KinkGroupID,
+                        ServerID = Vars.menuBuilder.ServerID,
+                        KinkMsgID = Vars.menuBuilder.EmojiMenuID,
+                        KinkChannelID = Vars.menuBuilder.ChannelID
+
+                    }); ;
+                }
+                else if (groupMenu == null && Vars.menuBuilder.IsLimitMenu)
+                {
+                    DbContext.KinkGroupMenus.Add(new KinkGroupMenu
+                    {
+                        KinkGroupID = Vars.menuBuilder.KinkGroupID,
+                        ServerID = Vars.menuBuilder.ServerID,
+                        LimitMsgID = Vars.menuBuilder.EmojiMenuID,
+                        LimitChannelID = Vars.menuBuilder.ChannelID
+
+                    }); 
+                }
+                else if(!Vars.menuBuilder.IsLimitMenu)
+                {
+                    groupMenu.KinkGroupID = Vars.menuBuilder.KinkGroupID;
+                    groupMenu.ServerID = Vars.menuBuilder.ServerID;
+                    groupMenu.KinkChannelID = Vars.menuBuilder.ChannelID;
+                    groupMenu.KinkMsgID = Vars.menuBuilder.EmojiMenuID;
+                }
+
+                DbContext.KinkEmojis.RemoveRange(DbContext.KinkEmojis.Where(x => x.ServerID == Vars.menuBuilder.ServerID && Vars.menuBuilder.KinksToUpdate.Any(y => y.KinkID == x.KinkID)));
+
+                foreach(var kinkEmoji in Vars.menuBuilder.KinksToUpdate)
+                {
+                    DbContext.KinkEmojis.Add(new KinkEmoji
+                    {
+                        ServerID = Vars.menuBuilder.ServerID,
+                        KinkID = kinkEmoji.KinkID,
+                        EmojiName = kinkEmoji.EmojiName,
+                        KinkGroupID = Vars.menuBuilder.KinkGroupID,
+                    });
+                }
+
+                await DbContext.SaveChangesAsync();
+                ReloadMenus();
+
+
+            }
+            
+        }
+
+
+
+        public static void ReloadMenus()
+        {
+            using (var DbContext = new SqliteDbContext() )
+            {
+                Vars.groupMenus = DbContext.KinkGroupMenus.ToList();
+
+            }
+        }
+
+        public static ulong GetKinkFromMenu(KinkGroupMenu menu, IEmote myEmote )
+        {
+            using (var DbContext = new SqliteDbContext())
+            {
+                var aKinkEmoji = DbContext.KinkEmojis.Where(x => x.ServerID == menu.ServerID && x.KinkGroupID == menu.KinkGroupID && x.EmojiName == myEmote.ToString()).FirstOrDefault();
+
+                if (aKinkEmoji == null)
+                {
+                    return 0;
+                }
+
+                return aKinkEmoji.KinkID;
+
+            }
+        }
+
+        public static async Task AddUserKink(ulong userID, ulong kinkID, bool isLimit)
+        {
+            using (var DbContext = new SqliteDbContext())
+            {
+                DbContext.JoinedKinksUsers.RemoveRange(DbContext.JoinedKinksUsers.Where(x => x.UserID == userID && x.KinkID == kinkID));
+                DbContext.JoinedKinksUsers.Add(new JoinedKinkUser
+                {
+                    UserID = userID,
+                    KinkID = kinkID,
+                    IsLimit = isLimit,
+                });
+
+                await DbContext.SaveChangesAsync();
+
+            }
+        }
+
+
+
+
+
 
     }
 }

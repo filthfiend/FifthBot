@@ -120,48 +120,43 @@ namespace FifthBot
             }
         }
 
-        private Task Client_ReactionAdded(Cacheable<IUserMessage, ulong> arg1, ISocketMessageChannel arg2, SocketReaction arg3)
+        private async Task Client_ReactionAdded(Cacheable<IUserMessage, ulong> arg1, ISocketMessageChannel arg2, SocketReaction reaction)
         {
-            var socketReact = arg3;
-
-            if (Vars.menuBuilder.IsActive)
-            {
-                //SocketGuildUser user = Client.guild
             
 
+            if 
+                (
+                    Vars.menuBuilder.IsActive &&
+                    Vars.menuBuilder.ChannelID == reaction.Channel.Id &&
+                    Vars.menuBuilder.UserID == reaction.UserId &&
+                    Vars.menuBuilder.CommandStep == 3
+                )
+            {
+
+                Console.WriteLine("Launching GroupMenuEmojiAdder");
+                MenuCreateMethods menuToCreate = new MenuCreateMethods();
+                await menuToCreate.GroupMenuEmojiAdder(reaction);
 
 
+            }
+            else if 
+                (
+                    !Vars.menuBuilder.IsActive &&
+                    Vars.groupMenus.Any
+                    (
+                        x => x.KinkMsgID == reaction.MessageId || x.LimitMsgID == reaction.MessageId
+                    )
 
-
-
-
-
-
-
-
-
-
-
-
+                )
+            {
+                MenuAddMethods MenuAdding = new MenuAddMethods();
+                await MenuAdding.KinkAdder(reaction);
             }
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
         }
 
         private async Task Client_Log(LogMessage Message)
@@ -172,6 +167,8 @@ namespace FifthBot
         private async Task Client_Ready()
         {
             await Client.SetGameAsync("Fuck you, that's my name!", "http://www.google.com", ActivityType.Watching);
+
+            DataMethods.ReloadMenus();
 
             var botGuilds = Client.Guilds.ToList();
 
@@ -211,7 +208,7 @@ namespace FifthBot
 
 
             int ArgPos = 0;
-            if (!(Message.HasStringPrefix("!!", ref ArgPos) || Message.HasMentionPrefix(Client.CurrentUser, ref ArgPos)))
+            if (!(Message.HasStringPrefix("xx", ref ArgPos) || Message.HasMentionPrefix(Client.CurrentUser, ref ArgPos)))
             {
                 var guildUser = Context.User as SocketGuildUser;
 
