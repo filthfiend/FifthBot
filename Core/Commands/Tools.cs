@@ -590,7 +590,137 @@ namespace FifthBot.Core.Commands
         }
 
 
+        [RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
+        [RequireOwner(Group = "Permission")]
+        [RequireRole(name: "Seven Deadly Sins", Group = "Permission")]
+        [RequireRole(name: "Testers", Group = "Permission")]
+        [Command("sinsearch"), Alias("ss", "sinnersearch"), Summary("Create a menu for a group")]
+        public async Task SinSearch(params string[] text)
+        {
+            var listOfUserIDs = DataMethods.GetUserIDsFromKinknames(text);
 
+            Console.WriteLine(" Completing the datamethods method ");
+
+            string reslut = "";
+
+            if (listOfUserIDs == null || listOfUserIDs.Count < 1)
+            {
+                await Context.Channel.SendMessageAsync("No resluts found");
+                return;
+            }
+
+
+            
+            string reslut2 = "​\nYour search terms:\n\n";
+
+            foreach (string term in text)
+            {
+                reslut2 += term + ", ";
+            }
+
+            reslut2 = reslut2.Remove(reslut2.LastIndexOf(","));
+            reslut2 += "\n\n";
+
+            reslut2 += "Search Resluts:\n" + "━━━━━━━\n\n";
+            reslut2 += "Note: please respect the Ask to DM tag by asking users who have it in the #Ask to DM channel before you DM them.\n\n";
+            List<SocketGuildUser> userList = new List<SocketGuildUser>();
+            bool start = true;
+            string noDMs = "DMs Closed";
+            string nonSearch = "Non Searchable";
+            string askDM = "Ask to DM";
+
+
+            foreach (ulong userIdent in listOfUserIDs)
+            {
+                if(Context.Guild.GetUser(userIdent) != null)
+                {
+                    userList.Add(Context.Guild.GetUser(userIdent));
+                }
+                
+            }
+
+            if (userList.Count() > 0)
+            {
+                userList.RemoveAll(x => x.Roles.Any(y => y.Name.Equals(noDMs, StringComparison.OrdinalIgnoreCase)));
+                userList.RemoveAll(x => x.Roles.Any(y => y.Name.Equals(nonSearch, StringComparison.OrdinalIgnoreCase)));
+
+
+
+            }
+
+
+            if (userList.Count() > 0)
+            {
+                reslut += "DM sent.";
+
+                foreach (SocketGuildUser userFound in userList)
+                {
+
+                    reslut2 += userFound.Username;
+                    reslut2 += "#";
+                    reslut2 += userFound.Discriminator;
+
+
+
+                    //reslut2 += userFound.Mention;
+
+                    if (userFound.Roles.Any(x => x.Name.Equals(askDM, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        reslut2 += " - Ask to DM";
+                    }
+
+                    reslut2 += "\n";
+
+                }
+
+
+
+            }
+            else
+            {
+                await Context.Channel.SendMessageAsync("No resluts found");
+                return;
+            }
+
+
+            reslut2 += "\n​";
+
+
+
+            while (reslut2.Length > 2)
+            {
+
+                int subLength = 2000;
+
+                if (subLength > reslut2.Length)
+                {
+                    subLength = reslut2.Length;
+                }
+
+                string tempSlut = reslut2.Substring(0, subLength);
+
+                tempSlut = tempSlut.Substring(0, tempSlut.LastIndexOf("\n"));
+
+                Console.WriteLine(tempSlut);
+
+                reslut2 = reslut2.Remove(0, tempSlut.Length);
+
+                Console.WriteLine(tempSlut);
+
+                tempSlut += "\n​";
+
+                await Context.User.SendMessageAsync(tempSlut);
+
+            }
+
+
+
+            await Context.Channel.SendMessageAsync(reslut);
+
+
+
+
+        }
 
 
 

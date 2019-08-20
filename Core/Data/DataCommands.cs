@@ -598,6 +598,67 @@ namespace FifthBot.Core.Data
             }
         }
 
+        public static List<ulong> GetUserIDsFromKinknames(string[] parameters)
+        {
+            using (var DbContext = new SqliteDbContext())
+            {
+                Console.WriteLine(" trying to join ");
+                var joinKinksAndNames = DbContext.JoinedKinksUsers.Join
+                    (
+                        DbContext.Kinks,
+                        a => a.KinkID,
+                        b => b.KinkID,
+                        (a, b) => new { a.UserID, a.KinkID, a.IsLimit, b.KinkName }
+                    );
+                //var complete1 = joinKinksAndNames.ToList();
+
+                Console.WriteLine(" trying to group ");
+                var groupUp = joinKinksAndNames
+                    .GroupBy
+                    (
+                        c => c.UserID,
+                        (myKey, stuff) => new { userKey = myKey, usersKinks = stuff }
+
+                    );
+                //var complete2 = groupUp.ToList();
+
+
+
+                Console.WriteLine(" trying to where ");
+                var narrowDown = groupUp
+                    .Where
+                    (
+                       u =>
+                       // every entry in parameters should match something somewhere in userkinks
+                       parameters
+                       .All(p => u.usersKinks.Any(k => k.KinkName.Equals(p,StringComparison.OrdinalIgnoreCase) && k.IsLimit == false))
+                       &&
+                       // nothing in parameters should match any of this user's limits
+                       !parameters.
+                       Any(p => u.usersKinks.Any(k => k.KinkName.Equals(p, StringComparison.OrdinalIgnoreCase) && k.IsLimit == true))
+                    );
+                //var complete3 = narrowDown.ToList();
+
+                Console.WriteLine(" trying to select ");
+                var selectIDs = narrowDown
+                    .Select((a) => a.userKey);
+             
+
+                Console.WriteLine(" trying to add to list ");
+                var addToList = selectIDs
+                    .ToList();
+
+                Console.WriteLine(" success ");
+                return addToList;
+
+
+
+            }
+
+
+
+        }
+
 
 
 
