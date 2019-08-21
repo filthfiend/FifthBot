@@ -33,19 +33,41 @@ namespace FifthBot.Core.Utils
                 isLimit = true;
             }
 
-            // need some type of data retrieval method here
-            // it needs to take in 
-            // - a kinkgroup id 
-            // - an emoji name
-            // - and a server id 
-            // spit out a kink id
-            // call it GetKinkFromMenu
-
             ulong kinkIDToAdd = DataMethods.GetKinkFromMenu(reactedMenu, reaction.Emote);
 
             await DataMethods.AddUserKink(reaction.UserId, kinkIDToAdd, isLimit);
 
 
+
         }
+
+        public async Task KinkRemover (SocketReaction reaction)
+        {
+
+            var reactedMenu = Vars.groupMenus.Where
+                (
+                    x => x.KinkMsgID == reaction.MessageId ||
+                    x.LimitMsgID == reaction.MessageId
+                ).FirstOrDefault();
+
+            bool isLimit = false;
+
+            if (reactedMenu.LimitMsgID == reaction.MessageId)
+            {
+                isLimit = true;
+            }
+
+            ulong kinkIDToAdd = DataMethods.GetKinkFromMenu(reactedMenu, reaction.Emote);
+
+            await DataMethods.RemoveUserKink(reaction.UserId, kinkIDToAdd, isLimit);
+
+
+
+
+
+
+
+        }
+
     }
 }

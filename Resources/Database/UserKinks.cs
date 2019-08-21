@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace FifthBot.Resources.Database
 {
-    public class JoinedKinkUser
+    public class UserKink
     {
         [Key]
         public ulong JoinID { get; set; }

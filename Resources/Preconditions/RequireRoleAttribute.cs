@@ -10,10 +10,10 @@ namespace FifthBot.Resources.Preconditions
     public class RequireRoleAttribute : PreconditionAttribute
     {
         // Create a field to store the specified name
-        private readonly string _name;
+        public readonly string name;
 
         // Create a constructor so the name can be specified
-        public RequireRoleAttribute(string name) => _name = name;
+        public RequireRoleAttribute(string name) => this.name = name;
 
         // Override the CheckPermissions method
         public override Task<PreconditionResult> CheckPermissionsAsync(ICommandContext context, CommandInfo command, IServiceProvider services)
@@ -22,12 +22,12 @@ namespace FifthBot.Resources.Preconditions
             if (context.User is SocketGuildUser gUser)
             {
                 // If this command was executed by a user with the appropriate role, return a success
-                if ( gUser.Roles.Any(r => r.Name == _name) )
+                if ( gUser.Roles.Any(r => r.Name == name) )
                     // Since no async work is done, the result has to be wrapped with `Task.FromResult` to avoid compiler errors
                     return Task.FromResult(PreconditionResult.FromSuccess());
                 // Since it wasn't, fail
                 else
-                    return Task.FromResult(PreconditionResult.FromError($"You must have a role named {_name} to run this command."));
+                    return Task.FromResult(PreconditionResult.FromError($"You must have a role named {name} to run this command."));
             }
             else
                 return Task.FromResult(PreconditionResult.FromError("You must be in a guild to run this command."));

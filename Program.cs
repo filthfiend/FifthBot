@@ -80,6 +80,7 @@ namespace FifthBot
 
 
             Client.ReactionAdded += Client_ReactionAdded;
+            Client.ReactionRemoved += Client_ReactionRemoved;
 
 
     
@@ -90,6 +91,8 @@ namespace FifthBot
 
             await Task.Delay(-1);
         }
+
+ 
 
         private async Task Client_JoinedGuild(SocketGuild arg)
         {
@@ -122,7 +125,29 @@ namespace FifthBot
 
         private async Task Client_ReactionAdded(Cacheable<IUserMessage, ulong> arg1, ISocketMessageChannel arg2, SocketReaction reaction)
         {
-            
+            //////////////////
+            // Check if bot //
+            //////////////////
+
+            if (reaction.User.IsSpecified && reaction.User.Value.IsBot)
+            {
+                return;
+            }
+
+            var reactionChannel = reaction.Channel as SocketGuildChannel;
+
+            var reactionUser = reactionChannel.Guild.GetUser(reaction.UserId);
+
+            if (reactionUser.IsBot)
+            {
+                return;
+            }
+
+
+
+
+
+
 
             if 
                 (
@@ -149,6 +174,11 @@ namespace FifthBot
 
                 )
             {
+                if (!reactionUser.Roles.Any(x => x.Name == "Sinners"))
+                {
+                    await reactionUser.SendMessageAsync("You may not use this menu until your intro is approved!");
+                    return;
+                }
                 MenuAddMethods MenuAdding = new MenuAddMethods();
                 await MenuAdding.KinkAdder(reaction);
             }
@@ -159,6 +189,65 @@ namespace FifthBot
             //throw new NotImplementedException();
         }
 
+
+        private async Task Client_ReactionRemoved(Cacheable<IUserMessage, ulong> arg1, ISocketMessageChannel arg2, SocketReaction reaction)
+        {
+
+
+            if (reaction.User.IsSpecified && reaction.User.Value.IsBot)
+            {
+                return;
+            }
+
+            var reactionChannel = reaction.Channel as SocketGuildChannel;
+
+            var reactionUser = reactionChannel.Guild.GetUser(reaction.UserId);
+
+            if (reactionUser.IsBot)
+            {
+                return;
+            }
+
+
+            if
+                (
+                    !Vars.menuBuilder.IsActive &&
+                    Vars.groupMenus.Any
+                    (
+                        x => x.KinkMsgID == reaction.MessageId || x.LimitMsgID == reaction.MessageId
+                    )
+
+                )
+            {
+                if (!reactionUser.Roles.Any(x => x.Name == "Sinners"))
+                {
+                    await reactionUser.SendMessageAsync("You may not use this menu until your intro is approved!");
+                    return;
+                }
+                MenuAddMethods MenuAdding = new MenuAddMethods();
+                await MenuAdding.KinkRemover(reaction);
+            }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            //throw new NotImplementedException();
+        }
+
+
+
+
         private async Task Client_Log(LogMessage Message)
         {
             Console.WriteLine($"{DateTime.Now} at {Message.Source} {Message.Message}");
@@ -166,7 +255,7 @@ namespace FifthBot
 
         private async Task Client_Ready()
         {
-            await Client.SetGameAsync("Fuck you, that's my name!", "http://www.google.com", ActivityType.Watching);
+            await Client.SetGameAsync("!!help for commands", "http://www.google.com", ActivityType.Watching);
 
             DataMethods.ReloadMenus();
 

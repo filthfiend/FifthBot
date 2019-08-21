@@ -44,6 +44,13 @@ namespace FifthBot.Core.Utils
         public string EmojiName { get; set; }
     }
 
+    public class GroupKinks
+    {
+        public bool isLimit { get; set; }
+        public KinkGroup Group { get; set; }
+        public List<Kink> KinksForGroup { get; set; }
+
+    }
 
 
 }

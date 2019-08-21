@@ -18,9 +18,9 @@ namespace FifthBot.Resources.Database
         public DbSet<ServerSetting> ServerSettings { get; set; }
         public DbSet<IntroChannel> IntroChannels { get; set; }
 
-        public DbSet<JoinedKinkUser> JoinedKinksUsers { get; set; }
         public DbSet<KinkGroup> KinkGroups { get; set; }
         public DbSet<Kink> Kinks { get; set; }
+        public DbSet<UserKink> UserKinks { get; set; }
 
         public DbSet<KinkEmoji> KinkEmojis {get;set;}
         public DbSet<KinkGroupMenu> KinkGroupMenus { get; set; }

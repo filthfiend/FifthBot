@@ -383,11 +383,14 @@ namespace FifthBot.Core.Data
                             KinkName = KinkHolder.Kink.KinkName,
                             KinkDesc = KinkHolder.Kink.KinkDesc,
                             KinkGroupID = KinkHolder.Kink.KinkGroupID,
+                            GroupOrder = KinkHolder.Kink.GroupOrder,
                             ServerID = (KinkEmoji != null) ? KinkEmoji.ServerID : 0,
                             EmojiName = (KinkEmoji != null) ? KinkEmoji.EmojiName : "",
                         }
-                    );
-                ;
+                    )
+                .OrderBy(ke => ke.GroupOrder)
+                .ThenBy(ke => ke.KinkName);
+                
 
                 Console.WriteLine("we're past the group join, ready to return");
 
@@ -532,6 +535,13 @@ namespace FifthBot.Core.Data
                     groupMenu.KinkChannelID = Vars.menuBuilder.ChannelID;
                     groupMenu.KinkMsgID = Vars.menuBuilder.EmojiMenuID;
                 }
+                else if (Vars.menuBuilder.IsLimitMenu)
+                {
+                    groupMenu.KinkGroupID = Vars.menuBuilder.KinkGroupID;
+                    groupMenu.ServerID = Vars.menuBuilder.ServerID;
+                    groupMenu.LimitChannelID = Vars.menuBuilder.ChannelID;
+                    groupMenu.LimitMsgID = Vars.menuBuilder.EmojiMenuID;
+                }
 
                 DbContext.KinkEmojis.RemoveRange(DbContext.KinkEmojis.Where(x => x.ServerID == Vars.menuBuilder.ServerID && Vars.menuBuilder.KinksToUpdate.Any(y => y.KinkID == x.KinkID)));
 
@@ -585,8 +595,8 @@ namespace FifthBot.Core.Data
         {
             using (var DbContext = new SqliteDbContext())
             {
-                DbContext.JoinedKinksUsers.RemoveRange(DbContext.JoinedKinksUsers.Where(x => x.UserID == userID && x.KinkID == kinkID));
-                DbContext.JoinedKinksUsers.Add(new JoinedKinkUser
+                DbContext.UserKinks.RemoveRange(DbContext.UserKinks.Where(x => x.UserID == userID && x.KinkID == kinkID));
+                DbContext.UserKinks.Add(new UserKink
                 {
                     UserID = userID,
                     KinkID = kinkID,
@@ -598,12 +608,40 @@ namespace FifthBot.Core.Data
             }
         }
 
+        public static async Task RemoveUserKink(ulong userID, ulong kinkID, bool isLimit)
+        {
+            using (var DbContext = new SqliteDbContext())
+            {
+                DbContext.UserKinks.RemoveRange(DbContext.UserKinks.Where(x => x.UserID == userID && x.KinkID == kinkID && x.IsLimit == isLimit ));
+
+                await DbContext.SaveChangesAsync();
+            }
+        }
+
+        public static (string[], string[]) ValidateKinkNames(string[] parameters)
+        {
+            //List<string> isAKink = new List<string>();
+            //List<string> isNotAKink = new List<string>();
+
+            using (var DbContext = new SqliteDbContext())
+            {
+                string[] isAKink = parameters.Where(x => DbContext.Kinks.Any(y => x.Equals(y.KinkName, StringComparison.OrdinalIgnoreCase))).ToArray();
+                string[] isNotAKink = parameters.Where(x => !DbContext.Kinks.Any(y => x.Equals(y.KinkName, StringComparison.OrdinalIgnoreCase))).ToArray();
+
+                return (isAKink, isNotAKink);
+
+            }
+
+             
+        }
+
+
         public static List<ulong> GetUserIDsFromKinknames(string[] parameters)
         {
             using (var DbContext = new SqliteDbContext())
             {
                 Console.WriteLine(" trying to join ");
-                var joinKinksAndNames = DbContext.JoinedKinksUsers.Join
+                var joinKinksAndNames = DbContext.UserKinks.Join
                     (
                         DbContext.Kinks,
                         a => a.KinkID,
@@ -658,8 +696,155 @@ namespace FifthBot.Core.Data
 
 
         }
+        /*
+        public static List<GroupKinks> GetUserKinks(ulong userID)
+        {
+            return GetUserKinksOrLimits(userID, false);
+        }
+
+        public static List<GroupKinks> GetUserLimits(ulong userID)
+        {
+            return GetUserKinksOrLimits(userID, true);
+        }
+        */
+        public static List<GroupKinks> GetUserKinksAndLimits()
+        {
+            using (var DbContext = new SqliteDbContext())
+            {
+                var joinKinksAndGroups = DbContext.Kinks
+                    .Join
+                    (
+                        DbContext.KinkGroups,
+                        a => a.KinkGroupID,
+                        b => b.KinkGroupID,
+                        (a, b) => new
+                        {
+                            a.KinkID,
+                            a.KinkName,
+                            a.KinkGroupID,
+                            a.KinkDesc,
+                            a.GroupOrder,
+                            b.KinkGroupName,
+                            b.KinkGroupDescrip
+                        }
+                    );
+
+                    var groupByGroup = joinKinksAndGroups
+                    .GroupBy
+                    (
+                        x => new
+                        {
+                            x.KinkGroupID,
+                            x.KinkGroupName,
+                            x.KinkGroupDescrip,
+
+                        },
+                        x => new Kink
+                        {
+                            KinkGroupID = x.KinkGroupID,
+                            KinkID = x.KinkID,
+                            KinkName = x.KinkName,
+                            KinkDesc = x.KinkDesc,
+                            GroupOrder = x.GroupOrder,
+                        },
+                        (kgl, kinkList) => new GroupKinks
+                        {
+                            isLimit = false,
+                            Group = new KinkGroup()
+                            {
+                                KinkGroupID = kgl.KinkGroupID,
+                                KinkGroupDescrip = kgl.KinkGroupDescrip,
+                                KinkGroupName = kgl.KinkGroupName
+                            },
+                            KinksForGroup = kinkList
+                            .OrderBy(theKink => theKink.GroupOrder)
+                            .ThenBy(theKink => theKink.KinkName)
+                            .ToList()
+                        }
 
 
+                    )
+                    .ToList();
+
+                return groupByGroup;
+
+            }
+        }
+
+        public static List<GroupKinks> GetUserKinksAndLimits(ulong userID)
+        {
+            using (var DbContext = new SqliteDbContext())
+            {
+
+                var userKinks = DbContext.UserKinks.Where(x => x.UserID == userID);
+
+                var joinKinksAndNames = userKinks
+                    .Join
+                    (
+                        DbContext.Kinks,
+                        a => a.KinkID,
+                        b => b.KinkID,
+                        (a, b) => new { a.UserID, a.KinkID, a.IsLimit, b.KinkName, b.KinkDesc, b.KinkGroupID, b.GroupOrder }
+                    );
+
+                var joinKinksAndGroups = joinKinksAndNames
+                    .Join
+                    (
+                        DbContext.KinkGroups,
+                        a => a.KinkGroupID,
+                        b => b.KinkGroupID,
+                        (a, b) => new { a.UserID, a.KinkID, a.IsLimit, a.KinkName, a.KinkGroupID, a.KinkDesc, a.GroupOrder, b.KinkGroupName, b.KinkGroupDescrip }
+                    );
+
+                var groupByGroup = joinKinksAndGroups
+                    .GroupBy
+                    (
+                        x => new
+                        {
+                            x.KinkGroupID,
+                            x.KinkGroupName,
+                            x.KinkGroupDescrip,
+                            x.IsLimit,
+
+                        },
+                        x => new Kink
+                        {
+                            KinkGroupID = x.KinkGroupID,
+                            KinkID = x.KinkID,
+                            KinkName = x.KinkName,
+                            KinkDesc = x.KinkDesc,
+                            GroupOrder = x.GroupOrder,
+                        },
+                        (kgl, kinkList) => new GroupKinks
+                        {
+                            isLimit = kgl.IsLimit,
+                            Group = new KinkGroup()
+                            {
+                                KinkGroupID = kgl.KinkGroupID,
+                                KinkGroupDescrip = kgl.KinkGroupDescrip,
+                                KinkGroupName = kgl.KinkGroupName
+                            },
+                            KinksForGroup = kinkList
+                            .OrderBy( theKink => theKink.GroupOrder)
+                            .ThenBy( theKink => theKink.KinkName )
+                            .ToList()
+                        }
+
+
+                    )
+                    .ToList();
+
+                return groupByGroup;
+
+
+            }
+
+
+
+
+
+
+        }
 
 
 

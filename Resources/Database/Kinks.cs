@@ -13,6 +13,10 @@ namespace FifthBot.Resources.Database
         public string KinkName { get; set; }
         public string KinkDesc { get; set; }
         public ulong KinkGroupID { get; set; }
+        public ulong AliasFor { get; set; }
+        public int GroupOrder { get; set; }
+
+
 
     }
 }

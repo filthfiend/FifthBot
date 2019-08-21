@@ -114,7 +114,7 @@ namespace FifthBot.Core.Utils
                     return;
                 }
 
-                if (limitOrKink == "limit")
+                if (limitOrKink.Equals("limit", StringComparison.OrdinalIgnoreCase))
                 {
                     Vars.menuBuilder.IsLimitMenu = true;
                 }
@@ -171,7 +171,7 @@ namespace FifthBot.Core.Utils
                 }
 
                 string emojiMenuText = "​\n" + "Building Menu" + "\n​" + "\n​"
-                    + limitOrKink + " Group - " + Vars.menuBuilder.KinkGroupName + "\n" + "\n​";
+                    + "**" + limitOrKink + " Group - " + Vars.menuBuilder.KinkGroupName + "**" + "\n" + "\n​";
                 await emojiMenuMsg.ModifyAsync(x => x.Content = emojiMenuText);
 
                 string editMenuText = "​\n" + "Edit Menu" + "\n​" + "\n​"
@@ -215,13 +215,16 @@ namespace FifthBot.Core.Utils
 
                 if (!Vars.menuBuilder.KinksToUpdate.Any(x => x.EmojiName.Equals("")))
                 {
+                    string building = "Building Menu" + "\n​" + "\n​";
+                    emojiMenuText = emojiMenuText.Remove(emojiMenuText.IndexOf(building), building.Length);
+
                     editMenuText += "​\n" + "You are all out of kinks to enter! Writing Menu to Database!" + "\n​";
                     await DataMethods.AddKinkMenu();
 
                     await Task.Delay(2000);
 
                     await editMenuMsg.ModifyAsync(x => x.Content = editMenuText);
-
+                    await emojiMenuMsg.ModifyAsync(x => x.Content = emojiMenuText);
                     WipeMenuBuilder();
 
                     return;
@@ -413,6 +416,10 @@ namespace FifthBot.Core.Utils
             }
             else
             {
+
+                string building = "Building Menu" + "\n​" + "\n​";
+                emojiMenuString = emojiMenuString.Remove(emojiMenuString.IndexOf(building), building.Length);
+
                 editMenuString += "​\n" + "Finally time to try and write everything to the database!" + "\n​";
 
                 // time to call some sort of write KinkEmojiData method
@@ -422,6 +429,7 @@ namespace FifthBot.Core.Utils
                 await Task.Delay(2000);
 
                 await editMenuMsg.ModifyAsync(x => x.Content = editMenuString);
+                await emojiMenuMsg.ModifyAsync(x => x.Content = emojiMenuString);
 
                 WipeMenuBuilder();
 

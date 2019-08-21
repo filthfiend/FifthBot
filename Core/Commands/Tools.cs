@@ -19,13 +19,14 @@ namespace FifthBot.Core.Commands
     public class Tools : ModuleBase<SocketCommandContext>
     {
 
+
+        [Command("search"), Alias("searchtags"), Summary("Search all of a user's Discord tags")]
         [RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
         [RequireOwner(Group = "Permission")]
         [RequireRole(name: "Seven Deadly Sins", Group = "Permission")]
         [RequireRole(name: "Testers", Group = "Permission")]
         [RequireRole(name: "Sinners", Group = "Permission")]
         [RequireChannel(name: "search")]
-        [Command("search"), Alias("searchtags"), Summary("Search all of a user's tags!")]
         public async Task Search(params string[] text)
         {
 
@@ -47,7 +48,7 @@ namespace FifthBot.Core.Commands
                 reslut2 += term + ", ";
             }
 
-            reslut2 = reslut2.Remove(reslut2.LastIndexOf(",") );
+            reslut2 = reslut2.Remove(reslut2.LastIndexOf(","));
             reslut2 += "\n\n";
 
 
@@ -78,7 +79,7 @@ namespace FifthBot.Core.Commands
 
                 }
             }
-            if(userList.Count() > 0 )
+            if (userList.Count() > 0)
             {
                 userList.RemoveAll(x => x.Roles.Any(y => y.Name.Equals(noDMs, StringComparison.OrdinalIgnoreCase)));
                 userList.RemoveAll(x => x.Roles.Any(y => y.Name.Equals(nonSearch, StringComparison.OrdinalIgnoreCase)));
@@ -94,12 +95,12 @@ namespace FifthBot.Core.Commands
 
                 foreach (SocketGuildUser userFound in userList)
                 {
-                    
+
                     reslut2 += userFound.Username;
                     reslut2 += "#";
                     reslut2 += userFound.Discriminator;
 
-                    
+
 
                     //reslut2 += userFound.Mention;
 
@@ -108,7 +109,7 @@ namespace FifthBot.Core.Commands
                         reslut2 += " - Ask to DM";
                     }
 
-                    reslut2 += "\n"; 
+                    reslut2 += "\n";
 
                 }
 
@@ -138,8 +139,8 @@ namespace FifthBot.Core.Commands
                 }
 
                 string tempSlut = reslut2.Substring(0, subLength);
-                
-                tempSlut = tempSlut.Substring(0, tempSlut.LastIndexOf("\n") );
+
+                tempSlut = tempSlut.Substring(0, tempSlut.LastIndexOf("\n"));
 
                 Console.WriteLine(tempSlut);
 
@@ -156,93 +157,245 @@ namespace FifthBot.Core.Commands
 
 
             await Context.Channel.SendMessageAsync(reslut);
-            
+
         }
 
+
+
+
+
+
+
+        [Command("sinsearch"), Alias("ss", "sinnersearch"), Summary("Search Den of Sinners kinks and limits in addition to Discord tags")]
         [RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
         [RequireOwner(Group = "Permission")]
         [RequireRole(name: "Seven Deadly Sins", Group = "Permission")]
         [RequireRole(name: "Testers", Group = "Permission")]
-        [Command("addkink"), Alias("ak"), Summary("Add a kink to the database")]
-        public async Task AddKink()
+        [RequireRole(name: "Sinners", Group = "Permission")]
+        public async Task SinSearch(params string[] text)
         {
 
-            
-            string initMessage = "Welcome " + Context.User.Mention + "\n" +
-                "New Kink Creation Step 1 - Enter Kink Name:";
-            var replymessage = await Context.Channel.SendMessageAsync(initMessage);
 
-
-            if (Vars.activeCommands.Where(x => x.ActorID == Context.User.Id).Count() > 0)
+            if ((text == null || text.Length < 1))
             {
-                // eventually delete the old posts here too
+                await Context.Channel.SendMessageAsync("No search terms given");
+                return;
+            }
 
-                Vars.activeCommands.RemoveAll(x => x.ActorID == Context.User.Id);
+            (string[] isAKink, string[] isNotAKink) = DataMethods.ValidateKinkNames(text);
+
+            Console.WriteLine(" Completing the validate kink names method ");
+
+            List<ulong> listOfUserIDs = new List<ulong>();
+            if (isAKink != null && isAKink.Length > 0)
+            {
+                listOfUserIDs = DataMethods.GetUserIDsFromKinknames(isAKink);
+            }
+
+            Console.WriteLine(" Completing the user IDs from kinknames method ");
+
+            List<string> listOfDiscordTags = new List<string>();
+            if (isNotAKink == null || isNotAKink.Length < 1)
+            {
+                listOfDiscordTags = isNotAKink.ToList();
+            }
+
+            Console.WriteLine(" Completed setting discord tags to list ");
+
+
+            if ((listOfUserIDs == null || listOfUserIDs.Count < 1) && (listOfDiscordTags == null || listOfDiscordTags.Count < 1))
+            {
+                await Context.Channel.SendMessageAsync("No resluts found");
+                return;
+            }
+
+            Console.WriteLine(" Completing the check for whether either list is null or zero ");
+
+            string reslut2 = "​\nYour search terms:\n━━━━━━━\n\n";
+
+            foreach (string term in text)
+            {
+                reslut2 += term + ", ";
+            }
+
+            reslut2 = reslut2.Remove(reslut2.LastIndexOf(","));
+            reslut2 += "\n\n";
+
+            reslut2 += "Search Resluts:\n" + "━━━━━━━\n\n";
+            reslut2 += "Note: please respect the Ask to DM tag by asking users who have it in the #Ask to DM channel before you DM them.\n\n";
+
+
+            List<SocketGuildUser> userList = new List<SocketGuildUser>();
+            string noDMs = "DMs Closed";
+            string nonSearch = "Non Searchable";
+            string askDM = "Ask to DM";
+
+            if (listOfUserIDs != null && listOfUserIDs.Count > 0)
+            {
+
+                userList = Context.Guild.Users.Where(user => listOfUserIDs.Any(dbUserID => user.Id == dbUserID)).ToList();
+
+                /*
+                foreach (ulong userIdent in listOfUserIDs)
+                {
+                    if (Context.Guild.GetUser(userIdent) != null)
+                    {
+                        userList.Add(Context.Guild.GetUser(userIdent));
+                    }
+
+                }
+                */
+            }
+
+            Console.WriteLine("Completed getting users from userlist by dbtags");
+
+
+            if ((isAKink == null || isAKink.Length < 1) && (listOfDiscordTags != null && listOfDiscordTags.Count() > 0))
+            {
+                Console.WriteLine("entering the discord tag if get");
+
+                Console.WriteLine("discord tag array zero position - " + listOfDiscordTags[0]);
+                userList = Context.Guild.Users.Where(user => user.Roles.Any(userRoles => userRoles.Name.Equals(listOfDiscordTags[0], StringComparison.OrdinalIgnoreCase))).ToList();
+
+                Console.WriteLine("completed filling userlist");
+                listOfDiscordTags.RemoveAt(0);
+                Console.WriteLine("completed removing tag from userlist");
+
+            }
+
+            Console.WriteLine("Completed getting users from userlist by discord tags");
+
+            if (listOfDiscordTags != null && listOfDiscordTags.Count() > 0)
+            {
+                if (userList != null && userList.Count() > 0)
+                {
+                    userList = userList.Where(aUser => listOfDiscordTags.All(discordTag => aUser.Roles.Any(userRole => userRole.Name.Equals(discordTag, StringComparison.OrdinalIgnoreCase)))).ToList();
+                }
+
+            }
+
+            Console.WriteLine("Completed flushing users from userlist by discord tags");
+
+
+            if (userList != null && userList.Count() > 0)
+            {
+                userList.RemoveAll(x => x.Roles.Any(y => y.Name.Equals(noDMs, StringComparison.OrdinalIgnoreCase)));
+                userList.RemoveAll(x => x.Roles.Any(y => y.Name.Equals(nonSearch, StringComparison.OrdinalIgnoreCase)));
+
+
+
+            }
+
+            Console.WriteLine("Completed flushing users from userlist by exclusion tags");
+
+
+            if (userList.Count() > 0)
+            {
+
+
+                foreach (SocketGuildUser userFound in userList)
+                {
+
+                    reslut2 += userFound.Username;
+                    reslut2 += "#";
+                    reslut2 += userFound.Discriminator;
+
+
+
+                    //reslut2 += userFound.Mention;
+
+                    if (userFound.Roles.Any(x => x.Name.Equals(askDM, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        reslut2 += " - Ask to DM";
+                    }
+
+                    reslut2 += "\n";
+
+                }
+
+
+
+            }
+            else
+            {
+                await Context.Channel.SendMessageAsync("No resluts found");
+                return;
             }
 
 
-            var newCommand = new Command
-            {
-                CommandName = "addkink",
-                CommandData = "start",
-                ActorID = Context.User.Id,
-                ChannelID = Context.Channel.Id,
-                MessageID = replymessage.Id,
+            reslut2 += "\n​";
 
-            };
-
-             Vars.activeCommands.Add(newCommand);
-
-            /*
-            if (Vars.usersAddingKinks.Count > 0 && Vars.usersAddingKinks.Exists(x => x == Context.User.Id))
-            {
-                Vars.usersAddingKinks.RemoveAll(x => x == Context.User.Id);
-            }
+            await dmSplit(reslut2);
 
 
-            Vars.usersAddingKinks.Add(Context.User.Id);
+
+            await Context.Channel.SendMessageAsync("DM sent.");
 
 
 
 
-
-
-
-            await DataMethods.RemoveKinkAdder(Context.User.Id);
-            await DataMethods.AddKinkAdder(replymessage.Id, Context.User.Id, Context.Channel.Id);
-            */
         }
 
-        
+
+
+        [Command("mysins"), Alias("mykinks", "mylimits"), Summary("Get a list of your own kinks and limits")]
         [RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
         [RequireOwner(Group = "Permission")]
         [RequireRole(name: "Seven Deadly Sins", Group = "Permission")]
         [RequireRole(name: "Testers", Group = "Permission")]
-        [Command("editkink"), Alias("ek"), Summary("Edit a kink in the database")]
-        public async Task EditKink()
+        [RequireRole(name: "Sinners", Group = "Permission")]
+        public async Task MySins(params string[] text)
         {
-            string initMessage = "Welcome " + Context.User.Mention + "\n" + "Kink Editor - Enter name of Kink to Edit";
-            var replymessage = await Context.Channel.SendMessageAsync(initMessage);
+            // var userKinks = DataMethods.GetUserKinks(Context.User.Id);
+            // var userLimits = DataMethods.GetUserLimits(Context.User.Id);
 
-            // clear other active commands for this user out of the list
-            if (Vars.activeCommands.Where(x => x.ActorID == Context.User.Id).Count() > 0)
+            var userKinks = DataMethods.GetUserKinksAndLimits(Context.User.Id);
+
+
+            if (userKinks == null)
             {
-                // eventually delete the old posts here too
-
-                Vars.activeCommands.RemoveAll(x => x.ActorID == Context.User.Id);
+                await Context.Channel.SendMessageAsync("You appear to have no kinks or limits");
+                return;
             }
 
-            var newCommand = new Command
+            string dmString = "​\n" + "**" + "Your Kinks:" + "\n━━━━━━━" + "**" + "\n\n​";
+
+            foreach (var gk in userKinks.Where(x => !x.isLimit))
             {
-                CommandName = "editkink",
-                CommandData = "start",
-                ActorID = Context.User.Id,
-                ChannelID = Context.Channel.Id,
-                MessageID = replymessage.Id,
+                dmString += gk.Group.KinkGroupName + "\n━━━━━━━" + "\n\n​";
 
-            };
+                foreach (var k in gk.KinksForGroup)
+                {
+                    dmString += k.KinkName + " - " + k.KinkDesc + "\n";
 
-            Vars.activeCommands.Add(newCommand);
+
+
+                }
+
+                dmString += "\n​";
+
+            }
+
+            dmString += "​\n" + "**" + "Your Limits:" + "\n━━━━━━━" + "**" + "\n\n​";
+
+            foreach (var gk in userKinks.Where(x => x.isLimit))
+            {
+                dmString += gk.Group.KinkGroupName + "\n━━━━━━━" + "\n\n​";
+
+                foreach (var k in gk.KinksForGroup)
+                {
+                    dmString += k.KinkName + " - " + k.KinkDesc + "\n";
+
+
+
+                }
+
+                dmString += "\n​";
+
+            }
+
+            await dmSplit(dmString);
+            await Context.Channel.SendMessageAsync("DM Sent");
 
 
 
@@ -250,28 +403,47 @@ namespace FifthBot.Core.Commands
 
 
 
-        /*
-        [RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
-        [RequireOwner(Group = "Permission")]
-        [Command("deletekink"), Alias("dk"), Summary("Delete a kink from the database")]
-        public async Task EditKink(params string[] text)
-        {
 
-        }
-
-        */
-
-
-
-
-
-        [RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
-        [RequireOwner(Group = "Permission")]
-        [RequireRole(name: "Seven Deadly Sins", Group = "Permission")]
-        [RequireRole(name: "Testers", Group = "Permission")]
         [Command("listkinks"), Alias("lk"), Summary("List all kinks in the database")]
+        [RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
+        [RequireOwner(Group = "Permission")]
+        [RequireRole(name: "Seven Deadly Sins", Group = "Permission")]
+        [RequireRole(name: "Testers", Group = "Permission")]
+        [RequireRole(name: "Sinners", Group = "Permission")]
         public async Task ListKinks()
         {
+
+            var kinksAndLimits = DataMethods.GetUserKinksAndLimits();
+
+            if (kinksAndLimits == null)
+            {
+                await Context.Channel.SendMessageAsync("There appear to be no kinks or limits");
+                return;
+            }
+
+            string dmString = "​\n" + "**" + "All Kinks:" + "\n━━━━━━━" + "**" + "\n\n​";
+
+            foreach (var gk in kinksAndLimits)
+            {
+                dmString += gk.Group.KinkGroupName + "\n━━━━━━━" + "\n\n​";
+
+                foreach (var k in gk.KinksForGroup)
+                {
+                    dmString += k.KinkName + " - " + k.KinkDesc + "\n";
+
+                }
+
+                dmString += "\n​";
+
+            }
+
+
+
+            await dmSplit(dmString);
+            await Context.Channel.SendMessageAsync("DM Sent");
+
+
+            /*
             List<Kink> listOfKinks = DataMethods.GetKinkList();
             List<KinkGroup> listOfGroups = DataMethods.GetGroupList();
 
@@ -283,7 +455,7 @@ namespace FifthBot.Core.Commands
             foreach (var group in listOfGroups)
             {
 
-                toPrint += group.KinkGroupName + " - " + group.KinkGroupDescrip 
+                toPrint += group.KinkGroupName + " - " + group.KinkGroupDescrip
                     + "\n" + "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
 
                 List<Kink> kinksInGroup = listOfKinks.Where(x => x.KinkGroupID == group.KinkGroupID).ToList();
@@ -330,21 +502,239 @@ namespace FifthBot.Core.Commands
                 await Context.User.SendMessageAsync(tempSlut);
 
             }
-
-
-
+            
             await Context.Channel.SendMessageAsync("DM Sent");
+            */
+        }
+
+
+        [Command("commandlist"), Alias("help"), Summary("list of commands")]
+        [RequireOwner(Group = "Permission")]
+        [RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
+        [RequireRole(name: "Seven Deadly Sins", Group = "Permission")]
+        [RequireRole(name: "Testers", Group = "Permission")]
+        [RequireRole(name: "Sinners", Group = "Permission")]
+        public async Task Commandlist(params string[] parameters)
+        {
+            string dm = "​\nList of Commands\n"
+                + "━━━━━━━━━━━━━━━━━━━━━━"
+                + "\n\n";
+
+
+            Type type = typeof(Tools);
+
+
+            foreach (var method in type.GetMethods())
+            {
+
+
+
+
+                var attrs = System.Attribute.GetCustomAttributes(method);
+
+                foreach (var attrib in attrs)
+                {
+                    if (attrib is CommandAttribute)
+                    {
+                        CommandAttribute a = (CommandAttribute)attrib;
+                        dm += "!!" + a.Text + "\n";
+
+                    }
+
+                    if (attrib is AliasAttribute)
+                    {
+                        AliasAttribute a = (AliasAttribute)attrib;
+                        dm += "aliases: ";
+                        foreach (var alias in a.Aliases)
+                        {
+                            dm += "!!" + alias + ", ";
+                        }
+                        dm = dm.Remove(dm.Count() - 2);
+
+                        dm += "\n";
+
+                    }
+
+                    if (attrib is SummaryAttribute)
+                    {
+                        SummaryAttribute a = (SummaryAttribute)attrib;
+                        dm += a.Text + "\n";
+
+                    }
+
+                    if (attrib is RequireOwnerAttribute)
+                    {
+                        RequireOwnerAttribute a = (RequireOwnerAttribute)attrib;
+                        dm += "Permitted users - Bot owner" + "\n";
+                    }
+
+                    if (attrib is RequireUserPermissionAttribute)
+                    {
+                        RequireUserPermissionAttribute a = (RequireUserPermissionAttribute)attrib;
+                        dm += "Permitted users - ";
+                        if (a.GuildPermission.Value == GuildPermission.Administrator)
+                        {
+                            dm += "Server Admins";
+                        }
+
+                        dm += "\n";
+                    }
+
+                    if (attrib is RequireRoleAttribute)
+                    {
+                        RequireRoleAttribute a = (RequireRoleAttribute)attrib;
+                        dm += "Permitted users - " + a.name + "\n";
+                    }
+
+
+
+                }
+
+                dm += "\n​";
+
+
+            }
+            dm += "\n\n​";
+
+            await Context.Channel.SendMessageAsync("DM Sent.");
+            await dmSplit(dm);
+
+
 
         }
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+        [Command("addkink"), Alias("ak"), Summary("Add a kink to the database")]
         [RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
         [RequireOwner(Group = "Permission")]
         [RequireRole(name: "Seven Deadly Sins", Group = "Permission")]
         [RequireRole(name: "Testers", Group = "Permission")]
+        public async Task AddKink()
+        {
+
+
+            string initMessage = "Welcome " + Context.User.Mention + "\n" +
+                "New Kink Creation Step 1 - Enter Kink Name:";
+            var replymessage = await Context.Channel.SendMessageAsync(initMessage);
+
+
+            if (Vars.activeCommands.Where(x => x.ActorID == Context.User.Id).Count() > 0)
+            {
+                // eventually delete the old posts here too
+
+                Vars.activeCommands.RemoveAll(x => x.ActorID == Context.User.Id);
+            }
+
+
+            var newCommand = new Command
+            {
+                CommandName = "addkink",
+                CommandData = "start",
+                ActorID = Context.User.Id,
+                ChannelID = Context.Channel.Id,
+                MessageID = replymessage.Id,
+
+            };
+
+            Vars.activeCommands.Add(newCommand);
+
+            /*
+            if (Vars.usersAddingKinks.Count > 0 && Vars.usersAddingKinks.Exists(x => x == Context.User.Id))
+            {
+                Vars.usersAddingKinks.RemoveAll(x => x == Context.User.Id);
+            }
+
+
+            Vars.usersAddingKinks.Add(Context.User.Id);
+
+
+
+
+
+
+
+            await DataMethods.RemoveKinkAdder(Context.User.Id);
+            await DataMethods.AddKinkAdder(replymessage.Id, Context.User.Id, Context.Channel.Id);
+            */
+        }
+
+
+
+        [Command("editkink"), Alias("ek"), Summary("Edit a kink in the database")]
+        [RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
+        [RequireOwner(Group = "Permission")]
+        [RequireRole(name: "Seven Deadly Sins", Group = "Permission")]
+        [RequireRole(name: "Testers", Group = "Permission")]
+        public async Task EditKink()
+        {
+            string initMessage = "Welcome " + Context.User.Mention + "\n" + "Kink Editor - Enter name of Kink to Edit";
+            var replymessage = await Context.Channel.SendMessageAsync(initMessage);
+
+            // clear other active commands for this user out of the list
+            if (Vars.activeCommands.Where(x => x.ActorID == Context.User.Id).Count() > 0)
+            {
+                // eventually delete the old posts here too
+
+                Vars.activeCommands.RemoveAll(x => x.ActorID == Context.User.Id);
+            }
+
+            var newCommand = new Command
+            {
+                CommandName = "editkink",
+                CommandData = "start",
+                ActorID = Context.User.Id,
+                ChannelID = Context.Channel.Id,
+                MessageID = replymessage.Id,
+
+            };
+
+            Vars.activeCommands.Add(newCommand);
+
+
+
+        }
+
+
+
+        /*
+        [RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
+        [RequireOwner(Group = "Permission")]
+        [Command("deletekink"), Alias("dk"), Summary("Delete a kink from the database")]
+        public async Task EditKink(params string[] text)
+        {
+
+        }
+
+        */
+
+
+
+
+
+
+
+
+
+
         [Command("addgroup"), Alias("ag"), Summary("Add a group to the database")]
+        [RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
+        [RequireOwner(Group = "Permission")]
+        [RequireRole(name: "Seven Deadly Sins", Group = "Permission")]
+        [RequireRole(name: "Testers", Group = "Permission")]
         public async Task AddGroup()
         {
 
@@ -374,15 +764,16 @@ namespace FifthBot.Core.Commands
 
             Vars.activeCommands.Add(newCommand);
 
-            
+
         }
 
 
+
+        [Command("editgroup"), Alias("eg"), Summary("Edit a kink group in the database")]
         [RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
         [RequireOwner(Group = "Permission")]
         [RequireRole(name: "Seven Deadly Sins", Group = "Permission")]
         [RequireRole(name: "Testers", Group = "Permission")]
-        [Command("editgroup"), Alias("eg"), Summary("Edit a kink group in the database")]
         public async Task EditGroup()
         {
             string initMessage = "Welcome " + Context.User.Mention + "\n" + "Kink Group Editor - Enter name of group to edit:";
@@ -412,11 +803,12 @@ namespace FifthBot.Core.Commands
 
         }
 
+
+        [Command("groupkinks"), Alias("gk"), Summary("Add kinks to a group. Usage = !!groupkinks [\"Group Name\"] [kink1] [kink2] [\"kink 3\"] etc")]
         [RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
         [RequireOwner(Group = "Permission")]
         [RequireRole(name: "Seven Deadly Sins", Group = "Permission")]
         [RequireRole(name: "Testers", Group = "Permission")]
-        [Command("groupkinks"), Alias("gk"), Summary("Add kinks to a group. Usage = !!groupkinks [\"Group Name\"] [kink1] [kink2] [\"kink 3\"] etc")]
         public async Task GroupKinks(params string[] parameters)
         {
             List<string> kinkList = parameters.ToList();
@@ -435,7 +827,7 @@ namespace FifthBot.Core.Commands
 
             string adding = "Adding kinks to " + groupToJoin.KinkGroupName + "\n";
 
-            foreach(string kinkName in kinkList)
+            foreach (string kinkName in kinkList)
             {
                 bool kinkFound = await DataMethods.AddKinkToGroup(groupToJoin.KinkGroupID, kinkName);
 
@@ -457,108 +849,12 @@ namespace FifthBot.Core.Commands
 
         }
 
-        [RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
-        [RequireOwner(Group = "Permission")]
-        [RequireRole(name: "Seven Deadly Sins", Group = "Permission")]
-        [RequireRole(name: "Testers", Group = "Permission")]
-        [Command("commandlist"), Alias("help"), Summary("list of commands")]
-        public async Task commandlist(params string[] parameters)
-        {
-            string dm = "​\nList of Commands\n" 
-                + "━━━━━━━━━━━━━━━━━━━━━━"
-                + "\n\n";
 
-
-            Type type = typeof(Tools);
-
-
-            foreach (var method in type.GetMethods())
-            {
-                
-
-
-
-                var attrs = System.Attribute.GetCustomAttributes(method);
-
-                foreach(var attrib in attrs)
-                {
-                    if(attrib is CommandAttribute)
-                    {
-                        CommandAttribute a = (CommandAttribute)attrib;
-                        dm += "!!" + a.Text + "\n";
-
-                    }
-                    
-                    if (attrib is AliasAttribute)
-                    {
-                        AliasAttribute a = (AliasAttribute)attrib;
-                        dm += "aliases: ";
-                        foreach (var alias in a.Aliases)
-                        {
-                            dm += "!!" + alias + ", ";
-                        }
-                        dm = dm.Remove(dm.Count() - 2);
-
-                        dm += "\n";
-
-                    }
-                    
-                    if (attrib is SummaryAttribute)
-                    {
-                        SummaryAttribute a = (SummaryAttribute)attrib;
-                        dm += a.Text + "\n\n";
-
-                    }
-
-
-
-                }
-
-
-                /*
-                var myNotes = method.GetCustomAttributes(inherit: false );
-                foreach(var attrib in myNotes)
-                {
-                    Console.WriteLine(" adding method attribute ");
-                    dm += "method attribute - " + attrib.ToString() + "\n";
-                }
-
-                
-                var myNoteData = method.GetCustomAttributesData();
-                foreach(var myData in myNoteData)
-                {
-                    Console.WriteLine(" adding method attribute data");
-                    dm += "attribute data - " + myData.ToString() + "\n";
-
-
-                    var myNamedArguments = myData.NamedArguments;
-                    ////
-                    foreach(var namedArg in myNamedArguments)
-                    {
-                        namedArg.
-                    }
-                    ////
-
-                }
-                */
-
-
-
-
-            }
-            dm += "\n\n​";
-
-            await Context.Channel.SendMessageAsync("DM Sent.");
-            await Context.User.SendMessageAsync(dm);
-            
-        }
-
-
-        [RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
-        [RequireOwner(Group = "Permission")]
-        [RequireRole(name: "Seven Deadly Sins", Group = "Permission")]
-        [RequireRole(name: "Testers", Group = "Permission")]
         [Command("creategroupmenu"), Alias("cgm"), Summary("Create a menu for a group")]
+        [RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
+        [RequireOwner(Group = "Permission")]
+        [RequireRole(name: "Seven Deadly Sins", Group = "Permission")]
+        [RequireRole(name: "Testers", Group = "Permission")]
         public async Task CreateGroupMenu(params string[] parameters)
         {
 
@@ -569,7 +865,7 @@ namespace FifthBot.Core.Commands
 
             var menuMessage = await Context.Channel.SendMessageAsync(emojiMenuMsg);
             var menuEditMessage = await Context.Channel.SendMessageAsync(editMenuMsg);
-           
+
             /*
             if (!Vars.menuBuilder.IsActive)
             {
@@ -589,139 +885,36 @@ namespace FifthBot.Core.Commands
 
         }
 
+        
 
-        [RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
-        [RequireOwner(Group = "Permission")]
-        [RequireRole(name: "Seven Deadly Sins", Group = "Permission")]
-        [RequireRole(name: "Testers", Group = "Permission")]
-        [Command("sinsearch"), Alias("ss", "sinnersearch"), Summary("Create a menu for a group")]
-        public async Task SinSearch(params string[] text)
+
+
+        
+
+        private async Task dmSplit(string dmString)
         {
-            var listOfUserIDs = DataMethods.GetUserIDsFromKinknames(text);
-
-            Console.WriteLine(" Completing the datamethods method ");
-
-            string reslut = "";
-
-            if (listOfUserIDs == null || listOfUserIDs.Count < 1)
-            {
-                await Context.Channel.SendMessageAsync("No resluts found");
-                return;
-            }
-
-
-            
-            string reslut2 = "​\nYour search terms:\n\n";
-
-            foreach (string term in text)
-            {
-                reslut2 += term + ", ";
-            }
-
-            reslut2 = reslut2.Remove(reslut2.LastIndexOf(","));
-            reslut2 += "\n\n";
-
-            reslut2 += "Search Resluts:\n" + "━━━━━━━\n\n";
-            reslut2 += "Note: please respect the Ask to DM tag by asking users who have it in the #Ask to DM channel before you DM them.\n\n";
-            List<SocketGuildUser> userList = new List<SocketGuildUser>();
-            bool start = true;
-            string noDMs = "DMs Closed";
-            string nonSearch = "Non Searchable";
-            string askDM = "Ask to DM";
-
-
-            foreach (ulong userIdent in listOfUserIDs)
-            {
-                if(Context.Guild.GetUser(userIdent) != null)
-                {
-                    userList.Add(Context.Guild.GetUser(userIdent));
-                }
-                
-            }
-
-            if (userList.Count() > 0)
-            {
-                userList.RemoveAll(x => x.Roles.Any(y => y.Name.Equals(noDMs, StringComparison.OrdinalIgnoreCase)));
-                userList.RemoveAll(x => x.Roles.Any(y => y.Name.Equals(nonSearch, StringComparison.OrdinalIgnoreCase)));
-
-
-
-            }
-
-
-            if (userList.Count() > 0)
-            {
-                reslut += "DM sent.";
-
-                foreach (SocketGuildUser userFound in userList)
-                {
-
-                    reslut2 += userFound.Username;
-                    reslut2 += "#";
-                    reslut2 += userFound.Discriminator;
-
-
-
-                    //reslut2 += userFound.Mention;
-
-                    if (userFound.Roles.Any(x => x.Name.Equals(askDM, StringComparison.OrdinalIgnoreCase)))
-                    {
-                        reslut2 += " - Ask to DM";
-                    }
-
-                    reslut2 += "\n";
-
-                }
-
-
-
-            }
-            else
-            {
-                await Context.Channel.SendMessageAsync("No resluts found");
-                return;
-            }
-
-
-            reslut2 += "\n​";
-
-
-
-            while (reslut2.Length > 2)
+            while (dmString.Length > 2)
             {
 
                 int subLength = 2000;
 
-                if (subLength > reslut2.Length)
+                if (subLength > dmString.Length)
                 {
-                    subLength = reslut2.Length;
+                    subLength = dmString.Length;
                 }
 
-                string tempSlut = reslut2.Substring(0, subLength);
+                string tempSlut = dmString.Substring(0, subLength);
 
                 tempSlut = tempSlut.Substring(0, tempSlut.LastIndexOf("\n"));
 
-                Console.WriteLine(tempSlut);
-
-                reslut2 = reslut2.Remove(0, tempSlut.Length);
-
-                Console.WriteLine(tempSlut);
+                dmString = dmString.Remove(0, tempSlut.Length);
 
                 tempSlut += "\n​";
 
                 await Context.User.SendMessageAsync(tempSlut);
 
             }
-
-
-
-            await Context.Channel.SendMessageAsync(reslut);
-
-
-
-
         }
-
 
 
 

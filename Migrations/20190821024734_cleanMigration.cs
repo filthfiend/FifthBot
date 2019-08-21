@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace FifthBot.Migrations
 {
-    public partial class onceagain : Migration
+    public partial class cleanMigration : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -58,21 +58,6 @@ namespace FifthBot.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "JoinedKinksUsers",
-                columns: table => new
-                {
-                    JoinID = table.Column<ulong>(nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    KinkID = table.Column<ulong>(nullable: false),
-                    UserID = table.Column<ulong>(nullable: false),
-                    IsLimit = table.Column<bool>(nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_JoinedKinksUsers", x => x.JoinID);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "KinkEmojis",
                 columns: table => new
                 {
@@ -80,7 +65,8 @@ namespace FifthBot.Migrations
                         .Annotation("Sqlite:Autoincrement", true),
                     KinkID = table.Column<ulong>(nullable: false),
                     ServerID = table.Column<ulong>(nullable: false),
-                    EmojiName = table.Column<string>(nullable: true)
+                    EmojiName = table.Column<string>(nullable: true),
+                    KinkGroupID = table.Column<ulong>(nullable: false)
                 },
                 constraints: table =>
                 {
@@ -127,7 +113,9 @@ namespace FifthBot.Migrations
                         .Annotation("Sqlite:Autoincrement", true),
                     KinkName = table.Column<string>(nullable: true),
                     KinkDesc = table.Column<string>(nullable: true),
-                    KinkGroupID = table.Column<ulong>(nullable: false)
+                    KinkGroupID = table.Column<ulong>(nullable: false),
+                    AliasFor = table.Column<ulong>(nullable: false),
+                    GroupOrder = table.Column<int>(nullable: false)
                 },
                 constraints: table =>
                 {
@@ -161,6 +149,21 @@ namespace FifthBot.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "UserKinks",
+                columns: table => new
+                {
+                    JoinID = table.Column<ulong>(nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    KinkID = table.Column<ulong>(nullable: false),
+                    UserID = table.Column<ulong>(nullable: false),
+                    IsLimit = table.Column<bool>(nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserKinks", x => x.JoinID);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Users",
                 columns: table => new
                 {
@@ -186,9 +189,6 @@ namespace FifthBot.Migrations
                 name: "IntroChannels");
 
             migrationBuilder.DropTable(
-                name: "JoinedKinksUsers");
-
-            migrationBuilder.DropTable(
                 name: "KinkEmojis");
 
             migrationBuilder.DropTable(
@@ -205,6 +205,9 @@ namespace FifthBot.Migrations
 
             migrationBuilder.DropTable(
                 name: "Stones");
+
+            migrationBuilder.DropTable(
+                name: "UserKinks");
 
             migrationBuilder.DropTable(
                 name: "Users");

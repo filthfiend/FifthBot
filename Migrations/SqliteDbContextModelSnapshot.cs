@@ -74,26 +74,14 @@ namespace FifthBot.Migrations
                     b.ToTable("IntroChannels");
                 });
 
-            modelBuilder.Entity("FifthBot.Resources.Database.JoinedKinkUser", b =>
-                {
-                    b.Property<ulong>("JoinID")
-                        .ValueGeneratedOnAdd();
-
-                    b.Property<bool>("IsLimit");
-
-                    b.Property<ulong>("KinkID");
-
-                    b.Property<ulong>("UserID");
-
-                    b.HasKey("JoinID");
-
-                    b.ToTable("JoinedKinksUsers");
-                });
-
             modelBuilder.Entity("FifthBot.Resources.Database.Kink", b =>
                 {
                     b.Property<ulong>("KinkID")
                         .ValueGeneratedOnAdd();
+
+                    b.Property<ulong>("AliasFor");
+
+                    b.Property<int>("GroupOrder");
 
                     b.Property<string>("KinkDesc");
 
@@ -194,6 +182,22 @@ namespace FifthBot.Migrations
                     b.HasKey("UserID");
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("FifthBot.Resources.Database.UserKink", b =>
+                {
+                    b.Property<ulong>("JoinID")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<bool>("IsLimit");
+
+                    b.Property<ulong>("KinkID");
+
+                    b.Property<ulong>("UserID");
+
+                    b.HasKey("JoinID");
+
+                    b.ToTable("UserKinks");
                 });
 #pragma warning restore 612, 618
         }
