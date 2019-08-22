@@ -35,9 +35,11 @@ namespace FifthBot.Core.Utils
 
             ulong kinkIDToAdd = DataMethods.GetKinkFromMenu(reactedMenu, reaction.Emote);
 
-            await DataMethods.AddUserKink(reaction.UserId, kinkIDToAdd, isLimit);
 
-
+            if (kinkIDToAdd != 0)
+            {
+                await DataMethods.AddUserKink(reaction.UserId, kinkIDToAdd, isLimit);
+            }
 
         }
 

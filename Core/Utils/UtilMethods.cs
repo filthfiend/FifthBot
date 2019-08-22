@@ -64,7 +64,7 @@ namespace FifthBot.Core.Utils
 
                 Console.WriteLine(" attempting to add kink  ");
 
-                await DataMethods.AddKink(kinkName, kinkDesc);
+                bool kinkAdded = await DataMethods.AddKink(kinkName, kinkDesc);
 
                 Console.WriteLine(" kink should be added  " + kinkCommand.CommandData);
 
@@ -87,8 +87,18 @@ namespace FifthBot.Core.Utils
 
                 var msgToDel = (RestUserMessage)await Context.Channel.GetMessageAsync(msgToDelID);
 
-                string newMessage = "Welcome " + Context.User.Mention + "\n" + 
-                    "New kink added - " + kinkName + " - " + kinkDesc;
+                string newMessage = "Welcome " + Context.User.Mention + "\n";
+
+                if(kinkAdded)
+                {
+                    newMessage += "New kink added - " + kinkName + " - " + kinkDesc;
+                }
+                else
+                {
+                    newMessage += "Kinkname in DB already, not added!";
+                }
+
+
                 await msgToDel.ModifyAsync(x => x.Content = newMessage);
 
                 /*

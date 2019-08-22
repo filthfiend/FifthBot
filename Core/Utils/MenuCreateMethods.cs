@@ -170,6 +170,8 @@ namespace FifthBot.Core.Utils
                     
                 }
 
+                await emojiMenuMsg.RemoveAllReactionsAsync();
+
                 string emojiMenuText = "​\n" + "Building Menu" + "\n​" + "\n​"
                     + "**" + limitOrKink + " Group - " + Vars.menuBuilder.KinkGroupName + "**" + "\n" + "\n​";
                 await emojiMenuMsg.ModifyAsync(x => x.Content = emojiMenuText);
@@ -273,9 +275,39 @@ namespace FifthBot.Core.Utils
 
             var editMenuMsg = (RestUserMessage)await reaction.Channel.GetMessageAsync(Vars.menuBuilder.EditMenuID);
 
-            Console.WriteLine("Getting kink to update");
+
+            string editMenuString = editMenuMsg.Content;
+
+            string please = "​\nPlease";
+
+            if (editMenuString.IndexOf(please) > -1)
+            {
+                editMenuString = editMenuString.Remove(editMenuString.IndexOf(please));
+            }
 
             var kinkToUpdate = Vars.menuBuilder.KinksToUpdate.Where(x => x.EmojiName.Equals("")).FirstOrDefault();
+
+            Console.WriteLine("reaction emote text - " + reaction.Emote);
+            foreach (var reactionThing in emojiMenuMsg.Reactions)
+            {
+                Console.WriteLine("emoji menu reaction - " + reactionThing.Key.Name);
+            }
+
+
+
+            if (emojiMenuMsg.Reactions.Any(x => x.Key.Name.Equals(reaction.Emote.Name)))
+            {
+                editMenuString += "​\n" + "Please use a different reaction for " + kinkToUpdate.KinkName + ", the previous one has already been used!" + "\n​";
+                await editMenuMsg.ModifyAsync(x => x.Content = editMenuString);
+                return;
+
+            }
+
+
+
+            Console.WriteLine("Getting kink to update");
+
+            
 
             Console.WriteLine("Adding data to kink");
 
@@ -390,14 +422,7 @@ namespace FifthBot.Core.Utils
 
 
 
-            string editMenuString = editMenuMsg.Content;
-
-            string please = "​\nPlease";
-
-            if (editMenuString.IndexOf(please) > -1)
-            {
-                editMenuString = editMenuString.Remove(editMenuString.IndexOf(please));
-            }
+            
 
 
 

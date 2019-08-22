@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -6,10 +7,21 @@ namespace FifthBot.Resources.Datatypes
 {
     public class Setting
     {
-        public string token { get; set; }
-        public ulong owner { get; set; }
-        public List<ulong> log { get; set; }
-        public string version { get; set; }
+        [JsonProperty]
+        public static string token { get; set; }
+        [JsonProperty]
+        public static ulong owner { get; set; }
+        [JsonProperty]
+        public static string dblocation { get; set; }
+        [JsonProperty]
+        public static string phase { get; set; }
+        [JsonProperty]
+        public static List<ulong> log { get; set; }
+        [JsonProperty]
+        public static string prefix { get; set; }
+        [JsonProperty]
+        public static string version { get; set; }
+
     }
     public class ServerSetting
     {

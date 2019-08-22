@@ -16,6 +16,7 @@ using FifthBot.Core.Utils;
 using FifthBot.Resources.Database;
 
 using Newtonsoft.Json;
+using FifthBot.Resources.Helpers;
 
 namespace FifthBot
 {
@@ -31,6 +32,7 @@ namespace FifthBot
 
         private async Task MainAsync()
         {
+            /*
             string JSON = "";
             //string SettingsLocation = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location).Replace(@"bin\Debug\netcoreapp2.2", @"\Data\Settings.json");
 
@@ -38,7 +40,7 @@ namespace FifthBot
 
             if (!File.Exists(settingsLocation))
             {
-                settingsLocation = @"/home/ubuntu/FifthBot/Data/Settings.json";
+                settingsLocation = @"Data/ReleaseSettings.json";
             }
             
             using (var fileStream = new FileStream(settingsLocation, FileMode.Open, FileAccess.Read))
@@ -47,8 +49,8 @@ namespace FifthBot
                 JSON = ReadSettings.ReadToEnd();
             }
 
-            Setting Settings = JsonConvert.DeserializeObject<Setting>(JSON);
-
+            JsonConvert.DeserializeObject<Setting>(JSON);
+            */
             
 
 
@@ -83,8 +85,8 @@ namespace FifthBot
             Client.ReactionRemoved += Client_ReactionRemoved;
 
 
-    
-            await Client.LoginAsync(TokenType.Bot, Settings.token);
+            HelperMethods.LoadSettings();
+            await Client.LoginAsync(TokenType.Bot, Setting.token);
             await Client.StartAsync();
 
 
@@ -295,9 +297,9 @@ namespace FifthBot
             if (Context.Message == null || Context.Message.Content == "") return;
             if (Context.User.IsBot) return;
 
-
+            HelperMethods.LoadSettings();
             int ArgPos = 0;
-            if (!(Message.HasStringPrefix("xx", ref ArgPos) || Message.HasMentionPrefix(Client.CurrentUser, ref ArgPos)))
+            if (!(Message.HasStringPrefix(Setting.prefix, ref ArgPos) || Message.HasMentionPrefix(Client.CurrentUser, ref ArgPos)))
             {
                 var guildUser = Context.User as SocketGuildUser;
 

@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FifthBot.Migrations
 {
     [DbContext(typeof(SqliteDbContext))]
-    [Migration("20190821024734_cleanMigration")]
+    [Migration("20190822033657_cleanMigration")]
     partial class cleanMigration
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

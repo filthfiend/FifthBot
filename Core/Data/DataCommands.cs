@@ -236,25 +236,30 @@ namespace FifthBot.Core.Data
 
         }
 
-        public static async Task AddKink(string kinkName, string kinkDesc)
+        public static async Task<bool> AddKink(string kinkName, string kinkDesc)
         {
             Console.WriteLine("we're getting to addkink");
             using (var DbContext = new SqliteDbContext())
             {
-                if (!DbContext.Kinks.Any(x => x.KinkName == kinkName))
-                {
-                    DbContext.Kinks.Add(new Kink
-                    {
-                        KinkName = kinkName,
-                        KinkDesc = kinkDesc,
 
-                    });
+
+                if (DbContext.Kinks.Any(x => x.KinkName.Equals(kinkName, StringComparison.OrdinalIgnoreCase) ))
+                {
+                    return false;
+
                 }
 
+                DbContext.Kinks.Add(new Kink
+                {
+                    KinkName = kinkName,
+                    KinkDesc = kinkDesc,
 
+                });
 
                 Console.WriteLine("we're getting to save changes async");
                 await DbContext.SaveChangesAsync();
+
+                return true;
             }
 
         }
@@ -477,7 +482,7 @@ namespace FifthBot.Core.Data
 
         }
 
-        public static async Task<bool> AddKinkToGroup(ulong groupID, string kinkName)
+        public static async Task<bool> AddKinkToGroup(ulong groupID, string kinkName, ulong serverID)
         {
             using (var DbContext = new SqliteDbContext())
             {
@@ -489,6 +494,10 @@ namespace FifthBot.Core.Data
                 }
 
                 kinkToGroup.KinkGroupID = groupID;
+
+                DbContext.KinkEmojis.RemoveRange( DbContext.KinkEmojis.Where(x => x.ServerID == serverID && x.KinkID == kinkToGroup.KinkID) );
+
+
                 await DbContext.SaveChangesAsync();
 
                 return true;
@@ -846,7 +855,29 @@ namespace FifthBot.Core.Data
 
         }
 
+        public static (KinkGroupMenu, string) getMenuRecord(ulong menuID, ulong serverID)
+        {
+            using (var DbContext = new SqliteDbContext())
+            {
+                var aMenu = DbContext.KinkGroupMenus.Where(x => x.ServerID == serverID && (x.LimitMsgID == menuID || x.KinkMsgID == menuID)).FirstOrDefault();
+                if(aMenu == null)
+                {
+                    return (null, null);
+                }
 
+                string aGroupName = DbContext.KinkGroups.Where(x => x.KinkGroupID == aMenu.KinkGroupID).FirstOrDefault().KinkGroupName;
+
+
+
+                return (aMenu, aGroupName);
+
+
+                // so what I need here is to get both the menu group ID and whether it's a
+                // limit or a kink menu, hmmm
+
+
+            }
+        }
 
 
     }

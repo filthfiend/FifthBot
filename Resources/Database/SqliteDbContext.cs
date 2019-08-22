@@ -5,6 +5,10 @@ using System.IO;
 using System.Reflection;
 using System.Text;
 
+using FifthBot.Resources.Datatypes;
+using Newtonsoft.Json;
+using FifthBot.Resources.Helpers;
+
 namespace FifthBot.Resources.Database
 {
     public class SqliteDbContext : DbContext
@@ -27,23 +31,51 @@ namespace FifthBot.Resources.Database
 
         protected override void OnConfiguring(DbContextOptionsBuilder Options)
         {
+            /*
+            string JSON = "";
+            //string SettingsLocation = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location).Replace(@"bin\Debug\netcoreapp2.2", @"\Data\Settings.json");
+
+            string settingsLocation = @"C:\discordbots\FifthBot\FifthBot\Data\Settings.json";
+
+            if (!File.Exists(settingsLocation))
+            {
+                settingsLocation = @"Data/ReleaseSettings.json";
+            }
+
+            using (var fileStream = new FileStream(settingsLocation, FileMode.Open, FileAccess.Read))
+            using (var ReadSettings = new StreamReader(fileStream))
+            {
+                JSON = ReadSettings.ReadToEnd();
+            }
+
+            JsonConvert.DeserializeObject<Setting>(JSON);
+            */
+
+            HelperMethods.LoadSettings();
+            string dbLocation = Setting.dblocation;
+
             base.OnConfiguring(Options);
 
-            string dbLocation = @"C:\discordbots\FifthBot\FifthBot\Data\Database.sqlite";
+            string sourceString = @"Data Source=" + dbLocation;
 
+            Options.UseSqlite(sourceString);
+
+
+            //string dbLocation = @"C:\discordbots\FifthBot\FifthBot\Data\Database.sqlite";
+            //string dbLocation = @"/home/ubuntu/FifthBot/Data/Database.sqlite";
+
+            /*
             if (!File.Exists(dbLocation))
             {
-                dbLocation = @"/home/ubuntu/FifthBot/Data";
+                dbLocation = @"/home/ubuntu/FifthBot/Data/Database.sqlite";
             }
 
             if (!File.Exists(dbLocation))
             {
                 dbLocation = @"C:\discordbots\FifthBot\FifthBot\Data\Database.sqlite";
             }
+            */
 
-            string sourceString = @"Data Source=" + dbLocation;
-
-            Options.UseSqlite(sourceString);
 
             //sourceString = @"Data Source=C:\discordbots\FifthBot\FifthBot\Data\Database.sqlite";
 

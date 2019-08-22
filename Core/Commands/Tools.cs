@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 using Discord;
 using Discord.Commands;
+using Discord.Rest;
 using Discord.WebSocket;
 
 using FifthBot.Core.Data;
@@ -21,10 +22,10 @@ namespace FifthBot.Core.Commands
 
 
         [Command("search"), Alias("searchtags"), Summary("Search all of a user's Discord tags")]
-        [RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
         [RequireOwner(Group = "Permission")]
-        [RequireRole(name: "Seven Deadly Sins", Group = "Permission")]
-        [RequireRole(name: "Testers", Group = "Permission")]
+        //[RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
+        //[RequireRole(name: "Seven Deadly Sins", Group = "Permission")]
+        //[RequireRole(name: "Testers", Group = "Permission")]
         [RequireRole(name: "Sinners", Group = "Permission")]
         [RequireChannel(name: "search")]
         public async Task Search(params string[] text)
@@ -167,11 +168,12 @@ namespace FifthBot.Core.Commands
 
 
         [Command("sinsearch"), Alias("ss", "sinnersearch"), Summary("Search Den of Sinners kinks and limits in addition to Discord tags")]
-        [RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
         [RequireOwner(Group = "Permission")]
-        [RequireRole(name: "Seven Deadly Sins", Group = "Permission")]
-        [RequireRole(name: "Testers", Group = "Permission")]
+        //[RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
+        //[RequireRole(name: "Seven Deadly Sins", Group = "Permission")]
+        //[RequireRole(name: "Testers", Group = "Permission")]
         [RequireRole(name: "Sinners", Group = "Permission")]
+        [RequireChannel(name: "search")]
         public async Task SinSearch(params string[] text)
         {
 
@@ -195,7 +197,7 @@ namespace FifthBot.Core.Commands
             Console.WriteLine(" Completing the user IDs from kinknames method ");
 
             List<string> listOfDiscordTags = new List<string>();
-            if (isNotAKink == null || isNotAKink.Length < 1)
+            if (isNotAKink != null && isNotAKink.Length > 0)
             {
                 listOfDiscordTags = isNotAKink.ToList();
             }
@@ -339,10 +341,10 @@ namespace FifthBot.Core.Commands
 
 
         [Command("mysins"), Alias("mykinks", "mylimits"), Summary("Get a list of your own kinks and limits")]
-        [RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
         [RequireOwner(Group = "Permission")]
-        [RequireRole(name: "Seven Deadly Sins", Group = "Permission")]
-        [RequireRole(name: "Testers", Group = "Permission")]
+        //[RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
+        //[RequireRole(name: "Seven Deadly Sins", Group = "Permission")]
+        //[RequireRole(name: "Testers", Group = "Permission")]
         [RequireRole(name: "Sinners", Group = "Permission")]
         public async Task MySins(params string[] text)
         {
@@ -405,10 +407,10 @@ namespace FifthBot.Core.Commands
 
 
         [Command("listkinks"), Alias("lk"), Summary("List all kinks in the database")]
-        [RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
         [RequireOwner(Group = "Permission")]
-        [RequireRole(name: "Seven Deadly Sins", Group = "Permission")]
-        [RequireRole(name: "Testers", Group = "Permission")]
+        //[RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
+        //[RequireRole(name: "Seven Deadly Sins", Group = "Permission")]
+        //[RequireRole(name: "Testers", Group = "Permission")]
         [RequireRole(name: "Sinners", Group = "Permission")]
         public async Task ListKinks()
         {
@@ -510,9 +512,9 @@ namespace FifthBot.Core.Commands
 
         [Command("commandlist"), Alias("help"), Summary("list of commands")]
         [RequireOwner(Group = "Permission")]
-        [RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
-        [RequireRole(name: "Seven Deadly Sins", Group = "Permission")]
-        [RequireRole(name: "Testers", Group = "Permission")]
+        //[RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
+        //[RequireRole(name: "Seven Deadly Sins", Group = "Permission")]
+        //[RequireRole(name: "Testers", Group = "Permission")]
         [RequireRole(name: "Sinners", Group = "Permission")]
         public async Task Commandlist(params string[] parameters)
         {
@@ -619,13 +621,37 @@ namespace FifthBot.Core.Commands
 
 
         [Command("addkink"), Alias("ak"), Summary("Add a kink to the database")]
-        [RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
         [RequireOwner(Group = "Permission")]
+        [RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
         [RequireRole(name: "Seven Deadly Sins", Group = "Permission")]
         [RequireRole(name: "Testers", Group = "Permission")]
-        public async Task AddKink()
+        public async Task AddKink(params string[] kinkdata)
         {
+            if (kinkdata != null && kinkdata.Length > 1)
+            {
+                string replyString = "Adding kink" + "\n"
+                    + "Name: - " + kinkdata[0] + "\n"
+                    + "Descrption: - " + kinkdata[1] + "\n";
+                var replyMessage = await Context.Channel.SendMessageAsync(replyString);
 
+                bool kinkAdded = await DataMethods.AddKink(kinkdata[0], kinkdata[1]);
+
+                if(kinkAdded)
+                {
+                    replyString += "Kink added successfully!" + "\n";
+                }
+                else
+                {
+                    replyString += "Kink already in database, not added!" + "\n";
+                }
+
+                await replyMessage.ModifyAsync(x => x.Content = replyString);
+
+
+                return;
+
+
+            }
 
             string initMessage = "Welcome " + Context.User.Mention + "\n" +
                 "New Kink Creation Step 1 - Enter Kink Name:";
@@ -675,8 +701,8 @@ namespace FifthBot.Core.Commands
 
 
         [Command("editkink"), Alias("ek"), Summary("Edit a kink in the database")]
-        [RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
         [RequireOwner(Group = "Permission")]
+        [RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
         [RequireRole(name: "Seven Deadly Sins", Group = "Permission")]
         [RequireRole(name: "Testers", Group = "Permission")]
         public async Task EditKink()
@@ -731,8 +757,8 @@ namespace FifthBot.Core.Commands
 
 
         [Command("addgroup"), Alias("ag"), Summary("Add a group to the database")]
-        [RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
         [RequireOwner(Group = "Permission")]
+        [RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
         [RequireRole(name: "Seven Deadly Sins", Group = "Permission")]
         [RequireRole(name: "Testers", Group = "Permission")]
         public async Task AddGroup()
@@ -770,8 +796,8 @@ namespace FifthBot.Core.Commands
 
 
         [Command("editgroup"), Alias("eg"), Summary("Edit a kink group in the database")]
-        [RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
         [RequireOwner(Group = "Permission")]
+        [RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
         [RequireRole(name: "Seven Deadly Sins", Group = "Permission")]
         [RequireRole(name: "Testers", Group = "Permission")]
         public async Task EditGroup()
@@ -805,12 +831,18 @@ namespace FifthBot.Core.Commands
 
 
         [Command("groupkinks"), Alias("gk"), Summary("Add kinks to a group. Usage = !!groupkinks [\"Group Name\"] [kink1] [kink2] [\"kink 3\"] etc")]
-        [RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
         [RequireOwner(Group = "Permission")]
+        [RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
         [RequireRole(name: "Seven Deadly Sins", Group = "Permission")]
         [RequireRole(name: "Testers", Group = "Permission")]
         public async Task GroupKinks(params string[] parameters)
         {
+            if (parameters.Length < 2)
+            {
+                await Context.Channel.SendMessageAsync("Insufficient data, quitting!");
+                return;
+            }
+
             List<string> kinkList = parameters.ToList();
             string groupName = kinkList[0];
             kinkList.RemoveAt(0);
@@ -829,7 +861,7 @@ namespace FifthBot.Core.Commands
 
             foreach (string kinkName in kinkList)
             {
-                bool kinkFound = await DataMethods.AddKinkToGroup(groupToJoin.KinkGroupID, kinkName);
+                bool kinkFound = await DataMethods.AddKinkToGroup(groupToJoin.KinkGroupID, kinkName, Context.Guild.Id);
 
                 if (kinkFound)
                 {
@@ -851,10 +883,8 @@ namespace FifthBot.Core.Commands
 
 
         [Command("creategroupmenu"), Alias("cgm"), Summary("Create a menu for a group")]
-        [RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
         [RequireOwner(Group = "Permission")]
-        [RequireRole(name: "Seven Deadly Sins", Group = "Permission")]
-        [RequireRole(name: "Testers", Group = "Permission")]
+        [RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
         public async Task CreateGroupMenu(params string[] parameters)
         {
 
@@ -885,11 +915,67 @@ namespace FifthBot.Core.Commands
 
         }
 
-        
+
+        [Command("editgroupmenu"), Alias("egm"), Summary("Edit the menu for a group")]
+        [RequireOwner(Group = "Permission")]
+        [RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
+        public async Task EditGroupMenu(ulong postID, params string[] parameters)
+        {
+            //var postToEdit = await Context.Channel.GetMessageAsync(postID) as SocketMessage;
+
+            (KinkGroupMenu menuRecord, string groupName) = DataMethods.getMenuRecord(postID, Context.Guild.Id);
+
+            if (menuRecord == null)
+            {
+                await Context.Channel.SendMessageAsync("Invalid post");
+                return;
+            }
+            bool isLimit = false;
+            if(menuRecord.LimitMsgID == postID)
+            {
+                isLimit = true;
+            }
+
+            if  (
+                    (isLimit && menuRecord.LimitChannelID != Context.Channel.Id) ||
+                    (!isLimit && menuRecord.KinkChannelID != Context.Channel.Id)
+                )
+            {
+                await Context.Channel.SendMessageAsync("Wrong channel");
+                return;
+            }
+
+            string limitOrKink = isLimit ? "Limit" : "Kink";
+            string editMenuMsg = "Editing the " + limitOrKink + " menu for Kink Group - " + groupName + "\n\n​";
+
+            editMenuMsg += "Do you want to reuse existing data or start from scratch? Reuse, Scratch, or anything else to quit." + "\n\n​";
+
+            var menuEditMessage = await Context.Channel.SendMessageAsync(editMenuMsg);
+
+            /*
+            if (!Vars.menuBuilder.IsActive)
+            {
+                await Context.Channel.SendMessageAsync("Fartz (variable is false)");
+
+            }
+            */
+
+            Vars.menuBuilder.EmojiMenuID = isLimit ? menuRecord.LimitMsgID : menuRecord.KinkMsgID;
+            Vars.menuBuilder.EditMenuID = menuEditMessage.Id;
+            Vars.menuBuilder.ChannelID = Context.Channel.Id;
+            Vars.menuBuilder.UserID = Context.User.Id;
+            Vars.menuBuilder.ServerID = Context.Guild.Id;
+            Vars.menuBuilder.CommandStep = 2;
+            Vars.menuBuilder.IsActive = true;
+            Vars.menuBuilder.IsLimitMenu = isLimit;
+            Vars.menuBuilder.KinkGroupName = groupName;
+            Vars.menuBuilder.KinkGroupID = menuRecord.KinkGroupID;
+            Vars.menuBuilder.KinksToUpdate = DataMethods.GetKinksInGroupWithEmojis(menuRecord.KinkGroupID, Context.Guild.Id);
+
+        }
 
 
 
-        
 
         private async Task dmSplit(string dmString)
         {
