@@ -21,13 +21,14 @@ namespace FifthBot.Core.Commands
     {
 
 
-        [Command("search"), Alias("searchtags"), Summary("Search all of a user's Discord tags")]
+        [Command("search"), Alias("searchtags"), Summary("Search all of a user's Discord tags\n" + "usage - !!search tagname \"tag name\" \"multi word tag name\" singlewordtagname")]
         [RequireOwner(Group = "Permission")]
         //[RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
         //[RequireRole(name: "Seven Deadly Sins", Group = "Permission")]
         //[RequireRole(name: "Testers", Group = "Permission")]
         [RequireRole(name: "Sinners", Group = "Permission")]
-        [RequireChannel(name: "search")]
+        [RequireChannel(name: "search", Group ="Channels")]
+        [RequireChannel(name: "bot", Group = "Channels")]
         public async Task Search(params string[] text)
         {
 
@@ -167,13 +168,15 @@ namespace FifthBot.Core.Commands
 
 
 
-        [Command("sinsearch"), Alias("ss", "sinnersearch"), Summary("Search Den of Sinners kinks and limits in addition to Discord tags")]
+        [Command("sinsearch"), Alias("ss", "sinnersearch"), Summary("Search Den of Sinners kinks and limits in addition to Discord tags\n" + 
+            "usage - !!sinsearch tagname \"tag name\" \"multi word tag name\" singlewordtagname")]
         [RequireOwner(Group = "Permission")]
         //[RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
         //[RequireRole(name: "Seven Deadly Sins", Group = "Permission")]
         //[RequireRole(name: "Testers", Group = "Permission")]
         [RequireRole(name: "Sinners", Group = "Permission")]
-        [RequireChannel(name: "search")]
+        [RequireChannel(name: "search", Group = "Channels")]
+        [RequireChannel(name: "bot", Group = "Channels")]
         public async Task SinSearch(params string[] text)
         {
 
@@ -346,6 +349,8 @@ namespace FifthBot.Core.Commands
         //[RequireRole(name: "Seven Deadly Sins", Group = "Permission")]
         //[RequireRole(name: "Testers", Group = "Permission")]
         [RequireRole(name: "Sinners", Group = "Permission")]
+        [RequireChannel(name: "search", Group = "Channels")]
+        [RequireChannel(name: "bot", Group = "Channels")]
         public async Task MySins(params string[] text)
         {
             // var userKinks = DataMethods.GetUserKinks(Context.User.Id);
@@ -405,13 +410,113 @@ namespace FifthBot.Core.Commands
 
 
 
-
-        [Command("listkinks"), Alias("lk"), Summary("List all kinks in the database")]
+        [Command("sins"), Alias("userkinks", "userlimits"), Summary("Get a list of another user's kinks and limits using their username and identifier\n" 
+            + "usage - !!sins username#2105 || !!sins \"multi word user name#5823\"")]
         [RequireOwner(Group = "Permission")]
         //[RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
         //[RequireRole(name: "Seven Deadly Sins", Group = "Permission")]
         //[RequireRole(name: "Testers", Group = "Permission")]
         [RequireRole(name: "Sinners", Group = "Permission")]
+        [RequireChannel(name: "search", Group = "Channels")]
+        [RequireChannel(name: "bot", Group = "Channels")]
+        public async Task Sins(string userNameAndNums)
+        {
+
+            string strBegin = userNameAndNums.Substring(0, 2);
+            string strEnd = userNameAndNums.Substring(userNameAndNums.Length - 1, 1);
+
+            if (strBegin == "<@" && strEnd == ">")
+            {
+                string toSend = "Do not ping using this command!\n"
+                    + "Instead, use the person's user name and numbers without the @! Like [!!sins username#3838] or [!!sins \"multi word user name#9999\"]";
+
+                await Context.Channel.SendMessageAsync(toSend);
+
+                return;
+            }
+
+
+
+            string userName = userNameAndNums.Substring(0, userNameAndNums.Length - 5);
+
+            string userNumString = userNameAndNums.Substring(userNameAndNums.Length - 4, 4);
+
+
+            var user = Context.Guild.Users.Where(x => x.Username == userName && x.Discriminator == userNumString).FirstOrDefault();
+
+            if (user == null)
+            {
+                await Context.Channel.SendMessageAsync("No such user on this server!");
+
+                return;
+            }
+
+            if (user.Roles.Any(x => x.Name == "DMs Closed" || x.Name == "Non Searchable"))
+            {
+                await Context.Channel.SendMessageAsync("That user's info is private!");
+                return;
+            }
+
+
+            ulong userID = user != null ? user.Id : 0;
+
+            var userKinks = DataMethods.GetUserKinksAndLimits(userID);
+
+            if (userKinks == null)
+            {
+                await Context.Channel.SendMessageAsync("User appears to have no kinks or limits");
+                return;
+            }
+
+            string dmString = "​\n" + "**" + userName + "\'s Kinks:" + "\n━━━━━━━" + "**" + "\n\n​";
+
+            foreach (var gk in userKinks.Where(x => !x.isLimit))
+            {
+                dmString += gk.Group.KinkGroupName + "\n━━━━━━━" + "\n\n​";
+
+                foreach (var k in gk.KinksForGroup)
+                {
+                    dmString += k.KinkName + " - " + k.KinkDesc + "\n";
+
+
+
+                }
+
+                dmString += "\n​";
+
+            }
+
+            dmString += "​\n" + "**" + userName + "\'s Limits:" + "\n━━━━━━━" + "**" + "\n\n​";
+
+            foreach (var gk in userKinks.Where(x => x.isLimit))
+            {
+                dmString += gk.Group.KinkGroupName + "\n━━━━━━━" + "\n\n​";
+
+                foreach (var k in gk.KinksForGroup)
+                {
+                    dmString += k.KinkName + " - " + k.KinkDesc + "\n";
+
+
+
+                }
+
+                dmString += "\n​";
+
+            }
+            await dmSplit(dmString);
+            await Context.Channel.SendMessageAsync("DM Sent");
+
+        }
+
+
+        [Command("allsins"), Alias("allkinks", "listkinks", "lk", "as"), Summary("List all kinks in the database")]
+        [RequireOwner(Group = "Permission")]
+        //[RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
+        //[RequireRole(name: "Seven Deadly Sins", Group = "Permission")]
+        //[RequireRole(name: "Testers", Group = "Permission")]
+        [RequireRole(name: "Sinners", Group = "Permission")]
+        [RequireChannel(name: "search", Group = "Channels")]
+        [RequireChannel(name: "bot", Group = "Channels")]
         public async Task ListKinks()
         {
 
