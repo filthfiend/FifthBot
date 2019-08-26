@@ -31,4 +31,12 @@
     <Folder Include="Resources\Extensions\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\Discord.Net\Discord.Net\src\Discord.Net.Commands\Discord.Net.Commands.csproj" />
+    <ProjectReference Include="..\..\Discord.Net\Discord.Net\src\Discord.Net.Core\Discord.Net.Core.csproj" />
+    <ProjectReference Include="..\..\Discord.Net\Discord.Net\src\Discord.Net.Rest\Discord.Net.Rest.csproj" />
+    <ProjectReference Include="..\..\Discord.Net\Discord.Net\src\Discord.Net.Webhook\Discord.Net.Webhook.csproj" />
+    <ProjectReference Include="..\..\Discord.Net\Discord.Net\src\Discord.Net.WebSocket\Discord.Net.WebSocket.csproj" />
+  </ItemGroup>
+
 </Project>

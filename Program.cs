@@ -290,9 +290,27 @@ namespace FifthBot
 
         private async Task Client_MessageReceived(SocketMessage MessageParam)
         {
+            
+
+
             var Message = MessageParam as SocketUserMessage;
 
-            var Context = new SocketCommandContext(Client, Message);
+            SocketGuild userGuild = null;
+            
+            if (Message.Channel.GetType() == typeof(SocketDMChannel))
+            {
+                userGuild = Client.Guilds.Where(x => x.Users.Any(y => Message.Author.Id == y.Id)).FirstOrDefault();
+            }
+            else
+            {
+                userGuild = (Message.Channel as SocketGuildChannel)?.Guild;
+            }
+
+            
+
+
+
+            var Context = new SocketCommandContext(Client, Message, userGuild);
 
             if (Context.Message == null || Context.Message.Content == "") return;
             if (Context.User.IsBot) return;
