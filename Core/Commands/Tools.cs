@@ -20,7 +20,7 @@ namespace FifthBot.Core.Commands
     public class Tools : ModuleBase<SocketCommandContext>
     {
 
-
+        /*
         [Command("search"), Alias("searchtags"), Summary("Search all of a user's Discord tags\n" + "usage - !!search tagname \"tag name\" \"multi word tag name\" singlewordtagname")]
         [RequireOwner(Group = "Permission")]
         //[RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
@@ -162,13 +162,13 @@ namespace FifthBot.Core.Commands
 
         }
 
+        */
 
 
 
 
 
-
-        [Command("sinsearch"), Alias("ss", "sinnersearch"), Summary("Search Den of Sinners kinks and limits in addition to Discord tags\n" + 
+        [Command("sinsearch"), Alias("search", "ss", "sinnersearch"), Summary("Search Den of Sinners kinks and limits in addition to Discord tags\n" + 
             "usage - !!sinsearch tagname \"tag name\" \"multi word tag name\" singlewordtagname")]
         [RequireOwner(Group = "Permission")]
         //[RequireUserPermission(GuildPermission.Administrator, Group = "Permission")]
@@ -183,7 +183,11 @@ namespace FifthBot.Core.Commands
 
             if ((text == null || text.Length < 1))
             {
-                await Context.Channel.SendMessageAsync("No search terms given");
+                var noDMSentMsg = await Context.Channel.SendMessageAsync("No search terms given");
+
+                await Task.Delay(1500);
+                await Context.Message.DeleteAsync();
+                await Context.Channel.DeleteMessageAsync(noDMSentMsg);
                 return;
             }
 
@@ -210,7 +214,11 @@ namespace FifthBot.Core.Commands
 
             if ((listOfUserIDs == null || listOfUserIDs.Count < 1) && (listOfDiscordTags == null || listOfDiscordTags.Count < 1))
             {
-                await Context.Channel.SendMessageAsync("No resluts found");
+                var noDMSentMsg = await Context.Channel.SendMessageAsync("No users found");
+
+                await Task.Delay(1500);
+                await Context.Message.DeleteAsync();
+                await Context.Channel.DeleteMessageAsync(noDMSentMsg);
                 return;
             }
 
@@ -226,8 +234,7 @@ namespace FifthBot.Core.Commands
             reslut2 = reslut2.Remove(reslut2.LastIndexOf(","));
             reslut2 += "\n\n";
 
-            reslut2 += "Search Resluts:\n" + "━━━━━━━\n\n";
-            reslut2 += "Note: please respect the Ask to DM tag by asking users who have it in the #Ask to DM channel before you DM them.\n\n";
+            
 
 
             List<SocketGuildUser> userList = new List<SocketGuildUser>();
@@ -279,7 +286,10 @@ namespace FifthBot.Core.Commands
 
             }
 
+            int resultCount = userList.Count();
+
             Console.WriteLine("Completed flushing users from userlist by discord tags");
+
 
 
             if (userList != null && userList.Count() > 0)
@@ -290,6 +300,12 @@ namespace FifthBot.Core.Commands
 
 
             }
+
+            int resultMinusExcludes = userList.Count();
+
+            reslut2 += "Search Resluts:\n" + "━━━━━━━\n";
+            reslut2 += "Total - " + resultCount + ", Total minus nodm/nosearch - " + resultMinusExcludes + "\n";
+            reslut2 += "Note: please respect the Ask to DM tag by asking users who have it in the #Ask to DM channel before you DM them.\n\n";
 
             Console.WriteLine("Completed flushing users from userlist by exclusion tags");
 
@@ -323,7 +339,13 @@ namespace FifthBot.Core.Commands
             }
             else
             {
-                await Context.Channel.SendMessageAsync("No resluts found");
+                var noDMSentMsg = await Context.Channel.SendMessageAsync("No resluts found");
+
+
+                await Task.Delay(1500);
+
+                await Context.Message.DeleteAsync();
+                await Context.Channel.DeleteMessageAsync(noDMSentMsg);
                 return;
             }
 
@@ -332,11 +354,22 @@ namespace FifthBot.Core.Commands
 
             await dmSplit(reslut2);
 
+            var dmSentMsg = await Context.Channel.SendMessageAsync("DM sent.");
+            var secretChannel = Context.Guild.TextChannels.Where(x => x.Name == "searchdata").FirstOrDefault();
+
+            string searchFor = "";
+            foreach (string term in text)
+            {
+                searchFor += term + ", ";
+            }
+            searchFor += " - " + DateTime.Now;
+            var dmSecretMsg = secretChannel.SendMessageAsync("DM sent - search for - " + searchFor);
 
 
-            await Context.Channel.SendMessageAsync("DM sent.");
+            await Task.Delay(1500);
 
-
+            await Context.Message.DeleteAsync();
+            await Context.Channel.DeleteMessageAsync(dmSentMsg);
 
 
         }
@@ -361,7 +394,15 @@ namespace FifthBot.Core.Commands
 
             if (userKinks == null)
             {
-                await Context.Channel.SendMessageAsync("You appear to have no kinks or limits");
+                var noDMSentMsg = await Context.Channel.SendMessageAsync("You appear to have no kinks or limits");
+
+                await Task.Delay(1500);
+
+                await Context.Message.DeleteAsync();
+                await Context.Channel.DeleteMessageAsync(noDMSentMsg);
+
+
+
                 return;
             }
 
@@ -402,7 +443,18 @@ namespace FifthBot.Core.Commands
             }
 
             await dmSplit(dmString);
-            await Context.Channel.SendMessageAsync("DM Sent");
+            var dmSentMsg = await Context.Channel.SendMessageAsync("DM Sent");
+
+            var secretChannel = Context.Guild.TextChannels.Where(x => x.Name == "searchdata").FirstOrDefault();
+
+            var dmSecretMsg = secretChannel.SendMessageAsync("DM sent - search for - user's own info" + " - " + DateTime.Now);
+
+
+            await Task.Delay(1500);
+
+            await Context.Message.DeleteAsync();
+            await Context.Channel.DeleteMessageAsync(dmSentMsg);
+
 
 
 
@@ -419,7 +471,7 @@ namespace FifthBot.Core.Commands
         [RequireRole(name: "Sinners", Group = "Permission")]
         [RequireChannel(name: "search", Group = "Channels")]
         [RequireChannel(name: "bot", Group = "Channels")]
-        public async Task Sins(string userNameAndNums)
+        public async Task Sins([Remainder]string userNameAndNums)
         {
 
             string strBegin = userNameAndNums.Substring(0, 2);
@@ -430,9 +482,15 @@ namespace FifthBot.Core.Commands
                 string toSend = "Do not ping using this command!\n"
                     + "Instead, use the person's user name and numbers without the @! Like [!!sins username#3838] or [!!sins \"multi word user name#9999\"]";
 
-                await Context.Channel.SendMessageAsync(toSend);
+                var noDMSentMsg = await Context.Channel.SendMessageAsync(toSend);
 
+
+                await Task.Delay(1500);
+
+                await Context.Message.DeleteAsync();
+                await Context.Channel.DeleteMessageAsync(noDMSentMsg);
                 return;
+
             }
 
 
@@ -446,14 +504,25 @@ namespace FifthBot.Core.Commands
 
             if (user == null)
             {
-                await Context.Channel.SendMessageAsync("No such user on this server!");
+                var noDMSentMsg = await Context.Channel.SendMessageAsync("No such user on this server!");
 
+
+                await Task.Delay(1500);
+
+                await Context.Message.DeleteAsync();
+                await Context.Channel.DeleteMessageAsync(noDMSentMsg);
                 return;
+
             }
 
             if (user.Roles.Any(x => x.Name == "DMs Closed" || x.Name == "Non Searchable"))
             {
-                await Context.Channel.SendMessageAsync("That user's info is private!");
+                var noDMSentMsg = await Context.Channel.SendMessageAsync("That user's info is private!");
+
+                await Task.Delay(1500);
+
+                await Context.Message.DeleteAsync();
+                await Context.Channel.DeleteMessageAsync(noDMSentMsg);
                 return;
             }
 
@@ -464,7 +533,12 @@ namespace FifthBot.Core.Commands
 
             if (userKinks == null)
             {
-                await Context.Channel.SendMessageAsync("User appears to have no kinks or limits");
+                var noDMSentMsg = await Context.Channel.SendMessageAsync("User appears to have no kinks or limits");
+
+                await Task.Delay(1500);
+
+                await Context.Message.DeleteAsync();
+                await Context.Channel.DeleteMessageAsync(noDMSentMsg);
                 return;
             }
 
@@ -504,7 +578,19 @@ namespace FifthBot.Core.Commands
 
             }
             await dmSplit(dmString);
-            await Context.Channel.SendMessageAsync("DM Sent");
+            var dmSentMsg = await Context.Channel.SendMessageAsync("DM Sent");
+
+            var secretChannel = Context.Guild.TextChannels.Where(x => x.Name == "searchdata").FirstOrDefault();
+
+            string searchFor = userNameAndNums + " - " + DateTime.Now;
+            
+            var dmSecretMsg = secretChannel.SendMessageAsync("DM sent - search for - " + searchFor);
+
+
+            await Task.Delay(1500);
+
+            await Context.Message.DeleteAsync();
+            await Context.Channel.DeleteMessageAsync(dmSentMsg);
 
         }
 
@@ -547,7 +633,20 @@ namespace FifthBot.Core.Commands
 
 
             await dmSplit(dmString);
-            await Context.Channel.SendMessageAsync("DM Sent");
+            var dmSentMsg = await Context.Channel.SendMessageAsync("DM Sent");
+
+            var secretChannel = Context.Guild.TextChannels.Where(x => x.Name == "searchdata").FirstOrDefault();
+
+
+
+            var dmSecretMsg = secretChannel.SendMessageAsync("DM sent - search for - all kinks" + " - " + DateTime.Now);
+
+
+            await Task.Delay(1500);
+
+            await Context.Message.DeleteAsync();
+            await Context.Channel.DeleteMessageAsync(dmSentMsg);
+
 
 
             /*
@@ -702,9 +801,21 @@ namespace FifthBot.Core.Commands
 
             }
             dm += "\n\n​";
-
-            await Context.Channel.SendMessageAsync("DM Sent.");
             await dmSplit(dm);
+            var dmSentMsg = await Context.Channel.SendMessageAsync("DM Sent");
+
+            var secretChannel = Context.Guild.TextChannels.Where(x => x.Name == "searchdata").FirstOrDefault();
+
+
+
+            var dmSecretMsg = secretChannel.SendMessageAsync("DM sent - search for - command list" + " - " + DateTime.Now);
+
+
+            await Task.Delay(1500);
+
+            await Context.Message.DeleteAsync();
+            await Context.Channel.DeleteMessageAsync(dmSentMsg);
+
 
 
 
