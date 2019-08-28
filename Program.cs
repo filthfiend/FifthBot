@@ -71,7 +71,7 @@ namespace FifthBot
 
             Client.MessageReceived += Client_MessageReceived;
             await Commands.AddModulesAsync(Assembly.GetEntryAssembly(), null);
-                
+             
                 //AddModulesAsync(Assembly.GetEntryAssembly());
 
             Client.Ready += Client_Ready;
@@ -296,21 +296,25 @@ namespace FifthBot
             var Message = MessageParam as SocketUserMessage;
 
             SocketGuild userGuild = null;
+            SocketUser user = null;
             
             if (Message.Channel.GetType() == typeof(SocketDMChannel))
             {
                 userGuild = Client.Guilds.Where(x => x.Users.Any(y => Message.Author.Id == y.Id)).FirstOrDefault();
+                user = userGuild?.Users.Where(x => x.Id == Message.Author.Id).FirstOrDefault();
+
             }
             else
             {
                 userGuild = (Message.Channel as SocketGuildChannel)?.Guild;
+                user = Message.Author;
             }
 
             
 
 
 
-            var Context = new SocketCommandContext(Client, Message, userGuild);
+            var Context = new SocketCommandContext(Client, Message, userGuild, user);
 
             if (Context.Message == null || Context.Message.Content == "") return;
             if (Context.User.IsBot) return;
@@ -397,7 +401,7 @@ namespace FifthBot
                 return;
 
             }
-
+            
 
             var Result = await Commands.ExecuteAsync(Context, ArgPos, null);
             if (!Result.IsSuccess)
