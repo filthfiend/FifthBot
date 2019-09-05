@@ -588,7 +588,10 @@ namespace FifthBot.Core.Data
         {
             using (var DbContext = new SqliteDbContext())
             {
-                var aKinkEmoji = DbContext.KinkEmojis.Where(x => x.ServerID == menu.ServerID && x.KinkGroupID == menu.KinkGroupID && x.EmojiName == myEmote.ToString()).FirstOrDefault();
+                Console.WriteLine("emote name - " + myEmote.Name);
+                Console.WriteLine("tostring - " + myEmote.ToString());
+
+                var aKinkEmoji = DbContext.KinkEmojis.Where(x => x.ServerID == menu.ServerID && x.KinkGroupID == menu.KinkGroupID && x.EmojiName.Remove(x.EmojiName.IndexOf("<a") > -1 ? 1 : 0, x.EmojiName.IndexOf("<a") > -1 ? 1 : 0) == myEmote.ToString()).FirstOrDefault();
 
                 if (aKinkEmoji == null)
                 {
